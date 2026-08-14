@@ -45,6 +45,25 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
       };
     }
 
+    if (endpoint.startsWith('/auth/google')) {
+      const email = body?.email || 'user@edumanage.com';
+      const isSuperAdmin = email === 'faiyaz25@navgurukul.org' || email.includes('admin');
+      const role = isSuperAdmin ? 'super_admin' : 'student';
+      return {
+        success: true,
+        token: `mock_jwt_token_google_${Date.now()}`,
+        isNewUser: false,
+        user: {
+          id: `usr_google_${Date.now()}`,
+          name: body?.name || 'Google User',
+          email,
+          role,
+          avatar: body?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+          status: 'active',
+        },
+      };
+    }
+
     if (endpoint.startsWith('/auth/register')) {
       return {
         success: true,

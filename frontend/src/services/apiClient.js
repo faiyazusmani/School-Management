@@ -1,7 +1,16 @@
 import axios from 'axios';
 import { toast } from '../components/ui/toast';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const getBaseUrl = () => {
+  let rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  rawUrl = rawUrl.trim().replace(/\/+$/, '');
+  if (!rawUrl.endsWith('/api')) {
+    rawUrl = `${rawUrl}/api`;
+  }
+  return rawUrl;
+};
+
+const API_BASE_URL = getBaseUrl();
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
