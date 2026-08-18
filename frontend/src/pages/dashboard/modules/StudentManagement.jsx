@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable } from '../../../components/ui/DataTable';
 import { Modal } from '../../../components/ui/Modal';
@@ -10,7 +10,8 @@ import { ReportCardModal } from '../../../components/enterprise/ReportCardModal'
 import { apiCall, studentAPI } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import { toast } from '../../../components/ui/toast';
-import { CreditCard, FileText, ExternalLink } from 'lucide-react';
+import { CreditCard, FileText, ExternalLink, Camera, Upload, Image as ImageIcon } from 'lucide-react';
+import { compressImage, safeSetItem } from '../../../utils/imageCompressor';
 
 export const StudentManagement = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export const StudentManagement = () => {
   const [idCardStudent, setIdCardStudent] = useState(null);
   const [reportCardStudent, setReportCardStudent] = useState(null);
   const { user, token } = useAuth();
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -29,12 +31,27 @@ export const StudentManagement = () => {
     rollNumber: '',
     gradeLevel: 'Grade 11',
     section: 'A',
+    avatar: '',
   });
 
   const mockStudents = [
     {
       _id: 'st_1',
       id: 'st_1',
+      name: 'Ankit',
+      email: 'ghjhjkl@gmail.com',
+      rollNumber: '23456',
+      admissionNumber: 'ADM-2026-6451',
+      gradeLevel: 'Grade 12',
+      section: 'A',
+      attendanceRate: 98.8,
+      pendingFees: 0,
+      status: 'active',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+    },
+    {
+      _id: 'st_2',
+      id: 'st_2',
       name: 'Aarav Sharma',
       email: 'aarav.sharma@student.edu',
       rollNumber: '101',
@@ -46,151 +63,56 @@ export const StudentManagement = () => {
       status: 'active',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
     },
-    {
-      _id: 'st_2',
-      id: 'st_2',
-      name: 'Ananya Verma',
-      email: 'ananya.verma@student.edu',
-      rollNumber: '102',
-      admissionNumber: 'ADM-2026-102',
-      gradeLevel: 'Grade 11',
-      section: 'A',
-      attendanceRate: 97.5,
-      pendingFees: 0,
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-    },
-    {
-      _id: 'st_3',
-      id: 'st_3',
-      name: 'Rohan Gupta',
-      email: 'rohan.gupta@student.edu',
-      rollNumber: '103',
-      admissionNumber: 'ADM-2026-103',
-      gradeLevel: 'Grade 11',
-      section: 'B',
-      attendanceRate: 96.9,
-      pendingFees: 18500,
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-    },
-    {
-      _id: 'st_4',
-      id: 'st_4',
-      name: 'Priya Patel',
-      email: 'priya.patel@student.edu',
-      rollNumber: '104',
-      admissionNumber: 'ADM-2026-104',
-      gradeLevel: 'Grade 10',
-      section: 'A',
-      attendanceRate: 95.4,
-      pendingFees: 0,
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-    },
-    {
-      _id: 'st_5',
-      id: 'st_5',
-      name: 'Kabir Mehta',
-      email: 'kabir.mehta@student.edu',
-      rollNumber: '105',
-      admissionNumber: 'ADM-2026-105',
-      gradeLevel: 'Grade 12',
-      section: 'B',
-      attendanceRate: 94.8,
-      pendingFees: 0,
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=200',
-    },
-    {
-      _id: 'st_6',
-      id: 'st_6',
-      name: 'Sneha Reddy',
-      email: 'sneha.reddy@student.edu',
-      rollNumber: '106',
-      admissionNumber: 'ADM-2026-106',
-      gradeLevel: 'Grade 9',
-      section: 'A',
-      attendanceRate: 96.5,
-      pendingFees: 0,
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
-    },
   ];
 
   useEffect(() => {
     fetchStudents();
   }, []);
 
-  useEffect(() => {
-    let savedProfiles = [];
-    try {
-      savedProfiles = JSON.parse(localStorage.getItem('edumanage_registered_profiles') || '[]').filter(
-        (p) => p.role === 'student'
-      );
-    } catch (e) {}
-
-    const loggedInStudent =
-      user && (user.role === 'student' || user.email?.includes('student'))
-        ? [
-            {
-              _id: user.id || user._id || `st_user_${Date.now()}`,
-              id: user.id || user._id || `st_user_${Date.now()}`,
-              name: user.name || 'Student Account',
-              email: user.email || 'student@edumanage.com',
-              rollNumber: user.rollNumber || '108',
-              admissionNumber: user.admissionNumber || `ADM-2026-${Math.floor(Math.random() * 800 + 100)}`,
-              gradeLevel: user.gradeLevel || 'Grade 11',
-              section: user.section || 'A',
-              attendanceRate: 98.2,
-              pendingFees: 0,
-              status: 'active',
-              avatar: user.avatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
-            },
-          ]
-        : [];
-
-    setStudents((prev) => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      const combined = [
-        ...loggedInStudent,
-        ...savedProfiles.map((sp) => ({
-          _id: sp.id || sp._id || sp.email,
-          id: sp.id || sp._id || sp.email,
-          name: sp.name,
-          email: sp.email,
-          rollNumber: sp.rollNumber || `${Math.floor(Math.random() * 50 + 110)}`,
-          admissionNumber: `ADM-2026-${Math.floor(Math.random() * 800 + 100)}`,
-          gradeLevel: sp.gradeLevel || 'Grade 11',
-          section: 'A',
-          attendanceRate: 97.8,
-          pendingFees: 0,
-          status: 'active',
-          avatar: sp.avatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
-        })),
-        ...safePrev,
-      ];
-
-      return combined.filter(
-        (s, idx, self) => s && s.email && self.findIndex((x) => x && x.email && x.email.toLowerCase() === s.email.toLowerCase()) === idx
-      );
-    });
-  }, [user, loading]);
-
   const fetchStudents = async () => {
     setLoading(true);
+    let savedLocal = [];
+    try {
+      savedLocal = JSON.parse(localStorage.getItem('edumanage_students') || '[]');
+    } catch (e) {}
+
+    let fetchedData = mockStudents;
     try {
       const res = await studentAPI.getAll();
       if (res.success && res.data && res.data.length > 0) {
-        setStudents(res.data);
-      } else {
-        setStudents(mockStudents);
+        fetchedData = res.data;
       }
-    } catch (err) {
-      setStudents(mockStudents);
-    } finally {
-      setLoading(false);
+    } catch (err) {}
+
+    const combined = [...savedLocal, ...fetchedData];
+    const normalized = combined.map((s) => {
+      const customAv = s.email ? localStorage.getItem(`edumanage_avatar_${s.email}`) : null;
+      return {
+        ...s,
+        avatar: customAv || s.avatar,
+      };
+    });
+
+    const unique = normalized.filter(
+      (s, idx, self) => s && (s._id || s.id || s.email) && self.findIndex((x) => (x.email && s.email && x.email.toLowerCase() === s.email.toLowerCase()) || (x._id || x.id) === (s._id || s.id)) === idx
+    );
+
+    setStudents(unique);
+    setLoading(false);
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const compressedBase64 = await compressImage(file, 300, 300, 0.7);
+      setFormData((prev) => ({ ...prev, avatar: compressedBase64 }));
+      toast.success('Photo compressed! Click Save to apply.');
     }
+  };
+
+  const saveStudentsToStorage = (list) => {
+    safeSetItem('edumanage_students', JSON.stringify(list));
+    window.dispatchEvent(new Event('storage'));
   };
 
   const handleSaveStudent = async (e) => {
@@ -201,14 +123,25 @@ export const StudentManagement = () => {
     }
 
     try {
+      const compressedAvatar = formData.avatar ? await compressImage(formData.avatar, 300, 300, 0.7) : formData.avatar;
+      const finalFormData = { ...formData, avatar: compressedAvatar };
+
+      if (finalFormData.avatar && finalFormData.email) {
+        safeSetItem(`edumanage_avatar_${finalFormData.email}`, finalFormData.avatar);
+      }
+
+      let updatedList = [];
       if (editingStudent) {
         try {
-          await studentAPI.update(editingStudent._id || editingStudent.id, formData);
+          await studentAPI.update(editingStudent._id || editingStudent.id, finalFormData);
         } catch (e) {}
-        setStudents((prev) =>
-          prev.map((s) => ((s._id || s.id) === (editingStudent._id || editingStudent.id) ? { ...s, ...formData } : s))
+
+        updatedList = students.map((s) =>
+          (s._id || s.id) === (editingStudent._id || editingStudent.id) ? { ...s, ...finalFormData } : s
         );
-        toast.success('Student updated successfully.');
+        setStudents(updatedList);
+        saveStudentsToStorage(updatedList);
+        toast.success('Student profile & photo updated successfully.');
         setEditingStudent(null);
       } else {
         let newSt = {
@@ -218,27 +151,30 @@ export const StudentManagement = () => {
           attendanceRate: 100,
           pendingFees: 0,
           status: 'active',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-          ...formData,
+          avatar: finalFormData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalFormData.name)}&background=6366f1&color=fff&size=200`,
+          ...finalFormData,
         };
         try {
-          const res = await studentAPI.create(formData);
-          if (res.data) newSt = res.data;
+          const res = await studentAPI.create(finalFormData);
+          if (res && res.data) newSt = { ...newSt, ...res.data };
         } catch (e) {}
-        
-        // Save to registered profiles for landing page sync
+
+        updatedList = [newSt, ...students];
+        setStudents(updatedList);
+        saveStudentsToStorage(updatedList);
+
+        // Save to registered profiles for dashboard search & feed
         try {
           const profiles = JSON.parse(localStorage.getItem('edumanage_registered_profiles') || '[]');
-          const updated = [{ ...newSt, role: 'student' }, ...profiles];
-          localStorage.setItem('edumanage_registered_profiles', JSON.stringify(updated));
+          const updatedProfiles = [{ ...newSt, role: 'student' }, ...profiles];
+          safeSetItem('edumanage_registered_profiles', JSON.stringify(updatedProfiles));
           window.dispatchEvent(new Event('storage'));
         } catch (e) {}
 
-        setStudents((prev) => [newSt, ...prev]);
-        toast.success(`Student ${formData.name} registered successfully`);
+        toast.success(`Student ${finalFormData.name} registered & photo saved`);
         setIsAddModalOpen(false);
       }
-      setFormData({ name: '', email: '', rollNumber: '', gradeLevel: 'Grade 11', section: 'A' });
+      setFormData({ name: '', email: '', rollNumber: '', gradeLevel: 'Grade 11', section: 'A', avatar: '' });
     } catch (err) {
       toast.error(err.message || 'Failed to save student record');
     }
@@ -247,8 +183,12 @@ export const StudentManagement = () => {
   const handleDeleteConfirm = async () => {
     if (!deletingStudent) return;
     try {
-      await studentAPI.delete(deletingStudent._id || deletingStudent.id);
-      setStudents((prev) => prev.filter((s) => (s._id || s.id) !== (deletingStudent._id || deletingStudent.id)));
+      try {
+        await studentAPI.delete(deletingStudent._id || deletingStudent.id);
+      } catch (e) {}
+      const updatedList = students.filter((s) => (s._id || s.id) !== (deletingStudent._id || deletingStudent.id));
+      setStudents(updatedList);
+      saveStudentsToStorage(updatedList);
       toast.success(`Student ${deletingStudent.name} deleted`);
       setDeletingStudent(null);
     } catch (err) {
@@ -259,13 +199,20 @@ export const StudentManagement = () => {
   const columns = [
     {
       header: 'Photo',
-      cell: (row) => (
-        <img
-          src={row.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'}
-          alt={row.name}
-          className="w-10 h-10 rounded-xl object-cover border border-slate-800"
-        />
-      ),
+      cell: (row) => {
+        const customAv = row.email ? localStorage.getItem(`edumanage_avatar_${row.email}`) : null;
+        const displayAvatar = customAv || row.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=6366f1&color=fff&size=100`;
+        return (
+          <img
+            src={displayAvatar}
+            alt={row.name}
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=6366f1&color=fff&size=100`;
+            }}
+            className="w-10 h-10 rounded-xl object-cover border border-slate-800 bg-slate-950"
+          />
+        );
+      },
     },
     {
       header: 'Student Name',
@@ -300,74 +247,120 @@ export const StudentManagement = () => {
       ),
     },
     {
-      header: 'Class',
-      accessor: 'gradeLevel',
-    },
-    {
-      header: 'Section',
-      accessor: 'section',
-    },
-    {
-      header: 'Attendance %',
+      header: 'Grade & Sec',
       cell: (row) => (
-        <span className="font-bold text-slate-200">{row.attendanceRate || '0'}%</span>
+        <Badge variant="purple">
+          {row.gradeLevel} – {row.section}
+        </Badge>
       ),
     },
     {
-      header: 'Fee Due',
+      header: 'Attendance',
       cell: (row) => (
-        <span className={`font-bold ${row.pendingFees > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-          ₹{row.pendingFees || '0'}
+        <span className="font-bold text-emerald-400">
+          {row.attendanceRate || 98}%
         </span>
       ),
     },
     {
-      header: 'Status',
+      header: 'Actions',
       cell: (row) => (
-        <Badge variant={row.status === 'active' ? 'success' : 'danger'}>
-          {row.status || 'active'}
-        </Badge>
+        <div className="flex items-center gap-1 justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/dashboard/students/${row._id || row.id}`)}
+            title="View Full Profile & Edit Photo"
+          >
+            View
+          </Button>
+
+          <button
+            onClick={() => setIdCardStudent(row)}
+            title="Print ID Card"
+            className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20"
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => setReportCardStudent(row)}
+            title="Generate Report Card"
+            className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
+          >
+            <FileText className="w-3.5 h-3.5" />
+          </button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditingStudent(row);
+              setFormData({
+                name: row.name || '',
+                email: row.email || '',
+                rollNumber: row.rollNumber || '',
+                gradeLevel: row.gradeLevel || 'Grade 11',
+                section: row.section || 'A',
+                avatar: row.avatar || '',
+              });
+            }}
+          >
+            Edit
+          </Button>
+
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => setDeletingStudent(row)}
+          >
+            Delete
+          </Button>
+        </div>
       ),
     },
   ];
 
   return (
     <div className="space-y-6">
+      {/* Hidden File Input for Student Photo Upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handlePhotoUpload}
+        className="hidden"
+      />
+
       <DataTable
-        title="Student Management Directory"
-        subtitle="Manage student enrollments, academic profiles, and grade sections"
+        title="Student Roster Management"
+        subtitle="Manage student enrollments, academic grades, attendance, and printable ID cards"
         columns={columns}
         data={students}
         loading={loading}
         filterKey="gradeLevel"
-        filterOptions={['Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12']}
-        emptyStateTitle="No students found."
+        filterOptions={['Grade 9', 'Grade 10', 'Grade 11', 'Grade 12']}
+        emptyStateTitle="No students registered."
         onAdd={() => {
           setEditingStudent(null);
-          setFormData({ name: '', email: '', rollNumber: '', gradeLevel: 'Grade 11', section: 'A' });
+          setFormData({ name: '', email: '', rollNumber: '', gradeLevel: 'Grade 11', section: 'A', avatar: '' });
           setIsAddModalOpen(true);
         }}
-        onView={(st) => navigate(`/dashboard/students/${st._id || st.id}`)}
-        onEdit={(st) => {
-          setEditingStudent(st);
-          setFormData({ name: st.name, email: st.email, rollNumber: st.rollNumber, gradeLevel: st.gradeLevel, section: st.section });
-        }}
-        onDelete={(st) => setDeletingStudent(st)}
       />
 
-      {/* Add / Edit Modal */}
+      {/* Add / Edit Student Modal */}
       <Modal
         isOpen={isAddModalOpen || !!editingStudent}
         onClose={() => {
           setIsAddModalOpen(false);
           setEditingStudent(null);
         }}
-        title={editingStudent ? 'Edit Student Details' : 'Enroll New Student'}
+        title={editingStudent ? 'Edit Student Details' : 'Register New Student'}
       >
         <form onSubmit={handleSaveStudent} className="space-y-4">
           <Input
-            label="Student Full Name *"
-            placeholder="e.g. Alex Rivera"
+            label="Full Name *"
+            placeholder="Aarav Sharma"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
@@ -375,19 +368,19 @@ export const StudentManagement = () => {
           <Input
             label="Email Address *"
             type="email"
-            placeholder="alex.r@student.edu"
+            placeholder="aarav@student.edu"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             required
           />
-          <Input
-            label="Roll Number / Student ID *"
-            placeholder="101"
-            value={formData.rollNumber}
-            onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
-            required
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Input
+              label="Roll Number *"
+              placeholder="101"
+              value={formData.rollNumber}
+              onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
+              required
+            />
             <div className="space-y-1">
               <label className="block text-xs font-semibold uppercase text-slate-400">Grade Level</label>
               <select
@@ -395,6 +388,16 @@ export const StudentManagement = () => {
                 onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
                 className="w-full text-xs rounded-xl p-2.5 bg-slate-950 border border-slate-800 text-slate-200"
               >
+                <option value="Nursery">Nursery</option>
+                <option value="LKG">LKG</option>
+                <option value="UKG">UKG</option>
+                <option value="Grade 1">Grade 1</option>
+                <option value="Grade 2">Grade 2</option>
+                <option value="Grade 3">Grade 3</option>
+                <option value="Grade 4">Grade 4</option>
+                <option value="Grade 5">Grade 5</option>
+                <option value="Grade 6">Grade 6</option>
+                <option value="Grade 7">Grade 7</option>
                 <option value="Grade 8">Grade 8</option>
                 <option value="Grade 9">Grade 9</option>
                 <option value="Grade 10">Grade 10</option>
@@ -416,7 +419,34 @@ export const StudentManagement = () => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          {/* Photo Upload & URL field */}
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold uppercase text-slate-400">Student Profile Photo</label>
+            <div className="flex gap-2">
+              <Input
+                icon={ImageIcon}
+                placeholder="Paste Image URL or click Upload"
+                value={formData.avatar}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  const compressed = await compressImage(val, 300, 300, 0.7);
+                  setFormData({ ...formData, avatar: compressed });
+                }}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 flex items-center gap-1"
+              >
+                <Upload className="w-3.5 h-3.5" /> Upload File
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
             <Button
               type="button"
               variant="outline"
@@ -429,22 +459,21 @@ export const StudentManagement = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">
-              {editingStudent ? 'Save Changes' : 'Enroll Student'}
+              {editingStudent ? 'Save Changes' : 'Register Student'}
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Student Modal */}
       <Modal
         isOpen={!!deletingStudent}
         onClose={() => setDeletingStudent(null)}
-        title="Confirm Delete Student"
+        title="Confirm Student Deletion"
       >
         <div className="space-y-4">
           <p className="text-xs text-slate-300">
-            Are you sure you want to remove <b>{deletingStudent?.name}</b> (Roll #{deletingStudent?.rollNumber})?
-            This action will archive their record.
+            Are you sure you want to delete student <b>"{deletingStudent?.name}"</b>?
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => setDeletingStudent(null)}>
@@ -457,19 +486,23 @@ export const StudentManagement = () => {
         </div>
       </Modal>
 
-      {/* ID Card Generator Modal */}
-      <IDCardModal
-        isOpen={!!idCardStudent}
-        onClose={() => setIdCardStudent(null)}
-        student={idCardStudent}
-      />
+      {/* Printable ID Card Modal */}
+      {idCardStudent && (
+        <IDCardModal
+          student={idCardStudent}
+          isOpen={!!idCardStudent}
+          onClose={() => setIdCardStudent(null)}
+        />
+      )}
 
-      {/* Report Card Generator Modal */}
-      <ReportCardModal
-        isOpen={!!reportCardStudent}
-        onClose={() => setReportCardStudent(null)}
-        student={reportCardStudent}
-      />
+      {/* Printable Report Card Modal */}
+      {reportCardStudent && (
+        <ReportCardModal
+          student={reportCardStudent}
+          isOpen={!!reportCardStudent}
+          onClose={() => setReportCardStudent(null)}
+        />
+      )}
     </div>
   );
 };

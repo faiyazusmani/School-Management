@@ -6,9 +6,15 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('edumanage_user');
-      if (!savedUser || savedUser === 'undefined' || savedUser === 'null') return null;
-      return JSON.parse(savedUser);
+      const savedUserStr = localStorage.getItem('edumanage_user');
+      if (!savedUserStr || savedUserStr === 'undefined' || savedUserStr === 'null') return null;
+      const parsed = JSON.parse(savedUserStr);
+
+      const customAvatar = localStorage.getItem(`edumanage_avatar_${parsed.email}`) || localStorage.getItem('edumanage_user_avatar');
+      if (customAvatar) {
+        parsed.avatar = customAvatar;
+      }
+      return parsed;
     } catch (e) {
       localStorage.removeItem('edumanage_user');
       return null;
@@ -25,7 +31,14 @@ export const AuthProvider = ({ children }) => {
   // Automatically synchronize user state to localStorage
   useEffect(() => {
     if (user && user.name) {
+      if (user.avatar) {
+        localStorage.setItem('edumanage_user_avatar', user.avatar);
+        if (user.email) {
+          localStorage.setItem(`edumanage_avatar_${user.email}`, user.avatar);
+        }
+      }
       localStorage.setItem('edumanage_user', JSON.stringify(user));
+
       try {
         const profiles = JSON.parse(localStorage.getItem('edumanage_registered_profiles') || '[]');
         const existingIdx = profiles.findIndex((p) => p && p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase());
@@ -63,13 +76,66 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const res = await apiCall('/auth/me', 'GET', null, token);
       if (res.success && res.user) {
-        setUser(res.user);
-        localStorage.setItem('edumanage_user', JSON.stringify(res.user));
+        const savedLocal = JSON.parse(localStorage.getItem('edumanage_user') || '{}');
+        const customAvatar = localStorage.getItem(`edumanage_avatar_${res.user.email}`) || localStorage.getItem('edumanage_user_avatar') || savedLocal.avatar;
+
+        const finalAvatar = customAvatar || (res.user.avatar && !res.user.avatar.includes('unsplash') ? res.user.avatar : savedLocal.avatar || res.user.avatar);
+
+        const mergedUser = {
+          ...savedLocal,
+          ...res.user,
+          avatar: finalAvatar,
+        };
+        setUser(mergedUser);
+        localStorage.setItem('edumanage_user', JSON.stringify(mergedUser));
+        if (finalAvatar) {
+          localStorage.setItem('edumanage_user_avatar', finalAvatar);
+          if (res.user.email) localStorage.setItem(`edumanage_avatar_${res.user.email}`, finalAvatar);
+        }
       }
     } catch (err) {
       console.warn('Failed to verify token with server, maintaining cached user session');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateProfileData = async (updatedData) => {
+    try {
+      if (updatedData.avatar) {
+        localStorage.setItem('edumanage_user_avatar', updatedData.avatar);
+        if (updatedData.email || user?.email) {
+          localStorage.setItem(`edumanage_avatar_${updatedData.email || user?.email}`, updatedData.avatar);
+        }
+      }
+
+      let updatedUser = { ...user, ...updatedData };
+      if (token) {
+        try {
+          const res = await apiCall('/auth/profile', 'PUT', updatedData, token);
+          if (res.success && res.user) {
+            updatedUser = { ...updatedUser, ...res.user, avatar: updatedData.avatar || res.user.avatar };
+          }
+        } catch (e) {}
+      }
+      setUser(updatedUser);
+      localStorage.setItem('edumanage_user', JSON.stringify(updatedUser));
+
+      // Also update in edumanage_registered_profiles
+      try {
+        const profiles = JSON.parse(localStorage.getItem('edumanage_registered_profiles') || '[]');
+        const updatedProfiles = profiles.map((p) =>
+          p && p.email && updatedUser.email && p.email.toLowerCase() === updatedUser.email.toLowerCase()
+            ? { ...p, ...updatedUser }
+            : p
+        );
+        localStorage.setItem('edumanage_registered_profiles', JSON.stringify(updatedProfiles));
+        window.dispatchEvent(new Event('storage'));
+      } catch (e) {}
+
+      return { success: true, user: updatedUser };
+    } catch (err) {
+      return { success: false, message: err.message };
     }
   };
 
@@ -81,11 +147,15 @@ export const AuthProvider = ({ children }) => {
         return { requireOtp: true, email: res.email || email };
       }
       if (res.success && res.user && res.token) {
+        const customAvatar = localStorage.getItem(`edumanage_avatar_${res.user.email}`) || localStorage.getItem('edumanage_user_avatar');
+        const avatarToUse = customAvatar || res.user.avatar;
+        const finalUser = { ...res.user, avatar: avatarToUse };
+
         setToken(res.token);
-        setUser(res.user);
+        setUser(finalUser);
         localStorage.setItem('edumanage_token', res.token);
-        localStorage.setItem('edumanage_user', JSON.stringify(res.user));
-        return { success: true, user: res.user };
+        localStorage.setItem('edumanage_user', JSON.stringify(finalUser));
+        return { success: true, user: finalUser };
       }
       return { success: false, message: res.message || 'Login failed' };
     } catch (err) {
@@ -119,11 +189,22 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await apiCall('/auth/google', 'POST', googlePayload);
       if (res.success && res.user && res.token) {
+        const googlePhoto = googlePayload.avatar || googlePayload.picture || res.user.avatar;
+        const finalUser = {
+          ...res.user,
+          avatar: googlePhoto || res.user.avatar,
+        };
+
+        if (finalUser.avatar) {
+          localStorage.setItem('edumanage_user_avatar', finalUser.avatar);
+          if (finalUser.email) localStorage.setItem(`edumanage_avatar_${finalUser.email}`, finalUser.avatar);
+        }
+
         setToken(res.token);
-        setUser(res.user);
+        setUser(finalUser);
         localStorage.setItem('edumanage_token', res.token);
-        localStorage.setItem('edumanage_user', JSON.stringify(res.user));
-        return { success: true, isNewUser: res.isNewUser || false, user: res.user, token: res.token };
+        localStorage.setItem('edumanage_user', JSON.stringify(finalUser));
+        return { success: true, isNewUser: res.isNewUser || false, user: finalUser, token: res.token };
       }
       return { success: false, message: res.message || 'Google authentication failed' };
     } catch (err) {
@@ -140,10 +221,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('edumanage_user');
   };
 
-  // Helper for direct demo role switching in UI
   const switchDemoRole = (role) => {
     const roleNames = {
-      super_admin: 'Alexander Wright (Super Admin)',
+      super_admin: 'Faiyaz Usmani (Super Admin)',
       teacher: 'Dr. Sarah Connor (Faculty)',
       student: 'Lucas Rivera (Student)',
       parent: 'Marcus Rivera (Parent)',
@@ -159,7 +239,7 @@ export const AuthProvider = ({ children }) => {
       name: roleNames[role] || 'Demo User',
       email: `${role}@edumanage.com`,
       role,
-      avatar: roleAvatars[role] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+      avatar: user?.avatar || roleAvatars[role],
       status: 'active',
     };
     const mockToken = `demo_token_${role}_${Date.now()}`;
@@ -180,6 +260,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         googleAuthLogin,
+        updateProfileData,
         logout,
         switchDemoRole,
         isAuthenticated: !!user,

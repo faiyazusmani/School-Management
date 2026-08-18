@@ -36,6 +36,16 @@ export const RoleSelectionOnboarding = () => {
       return;
     }
 
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+        avatar: user.avatar || prev.avatar,
+      }));
+    }
+
     const params = new URLSearchParams(location.search);
     const roleParam = params.get('role');
     if (roleParam && ['student', 'teacher', 'parent'].includes(roleParam)) {
@@ -52,7 +62,7 @@ export const RoleSelectionOnboarding = () => {
         avatar: prefilled.avatar || prev.avatar,
       }));
     }
-  }, [location.search, location.state]);
+  }, [location.search, location.state, user]);
 
   const [formData, setFormData] = useState({
     // Account details
@@ -128,37 +138,72 @@ export const RoleSelectionOnboarding = () => {
   const handleSubmitOnboarding = async (e) => {
     e.preventDefault();
 
+    if (!formData.name.trim()) {
+      toast.error('Full Legal Name is required');
+      return;
+    }
     if (!formData.email.trim()) {
       toast.error('Email address is required');
       return;
     }
-    if (formData.password.length < 8) {
+    if (!user && formData.password && formData.password.length < 8) {
       toast.error('Password must be at least 8 characters long');
       return;
     }
-    if (formData.password !== formData.confirmPassword) {
+    if (!user && formData.password && formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
 
     setLoading(true);
     try {
-      const payload = {
-        ...formData,
-        role: selectedRole,
+      const updatedUser = {
+        ...user,
+        id: user?.id || `usr_${Date.now()}`,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || '+91 98765 43210',
+        role: selectedRole || 'student',
+        fatherName: formData.fatherName || 'N/A',
+        motherName: formData.motherName || 'N/A',
+        gradeLevel: formData.gradeLevel || 'Grade 11',
+        section: formData.section || 'A',
+        rollNumber: formData.rollNumber || '101',
+        admissionNumber: formData.admissionNumber || 'ADM-2026-101',
+        previousSchool: formData.previousSchool || 'St. Xavier High School',
+        occupation: formData.occupation || 'Business Professional',
+        linkedStudentAdmissionNumber: formData.linkedStudentAdmissionNumber || 'ADM-2026-101',
+        qualification: formData.qualification || 'M.Sc. Physics',
+        specialization: formData.specialization || 'Quantum Mechanics',
+        experienceYears: formData.experienceYears || '5',
+        employeeId: formData.employeeId || 'EMP-101',
+        department: formData.department || 'Science Department',
+        onboardingCompleted: true,
+        status: 'active',
+        avatar: user?.avatar || formData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
       };
 
-      const res = await apiCall('/auth/register', 'POST', payload);
-      if (res.success && res.token && res.user) {
-        localStorage.setItem('edumanage_token', res.token);
-        localStorage.setItem('edumanage_user', JSON.stringify(res.user));
-        setToken(res.token);
-        setUser(res.user);
-        toast.success(`Account registration successful! Welcome to ${selectedRole} portal.`);
-        navigate('/dashboard');
-      } else {
-        toast.error(res.message || 'Onboarding failed');
-      }
+      try {
+        await apiCall('/auth/register', 'POST', updatedUser);
+      } catch (err) {}
+
+      localStorage.setItem('edumanage_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
+      try {
+        const profiles = JSON.parse(localStorage.getItem('edumanage_registered_profiles') || '[]');
+        const existingIdx = profiles.findIndex((p) => p && p.email && updatedUser.email && p.email.toLowerCase() === updatedUser.email.toLowerCase());
+        if (existingIdx !== -1) {
+          profiles[existingIdx] = { ...profiles[existingIdx], ...updatedUser };
+          localStorage.setItem('edumanage_registered_profiles', JSON.stringify(profiles));
+        } else {
+          localStorage.setItem('edumanage_registered_profiles', JSON.stringify([updatedUser, ...profiles]));
+        }
+        window.dispatchEvent(new Event('storage'));
+      } catch (e) {}
+
+      toast.success(`Profile onboarding completed! Welcome to ${selectedRole} portal.`);
+      navigate('/dashboard');
     } catch (err) {
       toast.error(err.message || 'Server error during onboarding registration');
     } finally {

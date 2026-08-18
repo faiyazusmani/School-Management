@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable } from '../../../components/ui/DataTable';
 import { Modal } from '../../../components/ui/Modal';
@@ -8,7 +8,8 @@ import { Badge } from '../../../components/ui/Badge';
 import { apiCall, teacherAPI } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import { toast } from '../../../components/ui/toast';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Camera, Upload, Image as ImageIcon } from 'lucide-react';
+import { compressImage, safeSetItem } from '../../../utils/imageCompressor';
 
 export const TeacherManagement = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export const TeacherManagement = () => {
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [deletingTeacher, setDeletingTeacher] = useState(null);
   const { user, token } = useAuth();
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,41 +27,8 @@ export const TeacherManagement = () => {
     department: 'Science & Innovation',
     designation: 'Senior Faculty',
     qualification: 'M.Sc.',
+    avatar: '',
   });
-
-  useEffect(() => {
-    fetchTeachers();
-  }, []);
-
-  useEffect(() => {
-    if (user && (user.role === 'teacher' || user.email?.includes('teacher'))) {
-      setTeachers((prev) => {
-        const safePrev = Array.isArray(prev) ? prev : [];
-        const exists = safePrev.some(
-          (t) => t && ((t.email && user.email && t.email.toLowerCase() === user.email.toLowerCase()) || (t._id && t._id === (user.id || user._id)) || (t.id && t.id === (user.id || user._id)))
-        );
-        if (!exists) {
-          const loggedInTeacher = {
-            _id: user.id || user._id || `t_user_${Date.now()}`,
-            id: user.id || user._id || `t_user_${Date.now()}`,
-            name: user.name || 'Faculty Member',
-            email: user.email || 'teacher@edumanage.com',
-            phone: user.phone || '+1 (555) 234-5678',
-            employeeId: user.employeeId || `EMP-00${Math.floor(Math.random() * 80 + 10)}`,
-            department: user.department || 'Science & Innovation',
-            designation: user.designation || 'Senior Faculty',
-            qualification: user.qualification || 'M.Sc. Advanced Sciences',
-            experienceYears: user.experienceYears || 6,
-            joiningDate: new Date().toISOString().split('T')[0],
-            status: user.status || 'active',
-            avatar: user.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200',
-          };
-          return [loggedInTeacher, ...safePrev];
-        }
-        return safePrev;
-      });
-    }
-  }, [user, loading]);
 
   const mockTeachers = [
     {
@@ -75,8 +44,8 @@ export const TeacherManagement = () => {
       qualification: 'Ph.D. Quantum Physics (MIT)',
       experienceYears: 12,
       joiningDate: '2018-08-15',
-      monthlySalary: 7500,
-      paidSalaryTotal: 60000,
+      monthlySalary: 75000,
+      paidSalaryTotal: 600000,
       pendingSalaryBalance: 0,
       attendanceRate: 98.6,
       subjects: ['Advanced Physics', 'Astrophysics'],
@@ -96,304 +65,265 @@ export const TeacherManagement = () => {
       qualification: 'M.Sc. Applied Mathematics (Stanford)',
       experienceYears: 9,
       joiningDate: '2020-01-10',
-      monthlySalary: 6800,
-      paidSalaryTotal: 54400,
+      monthlySalary: 68000,
+      paidSalaryTotal: 544000,
       pendingSalaryBalance: 0,
       attendanceRate: 97.4,
       subjects: ['AP Calculus BC', 'Linear Algebra'],
       assignedClasses: ['Grade 12-B'],
       status: 'active',
     },
-    {
-      _id: 't_seed_3',
-      id: 't_seed_3',
-      name: 'Elena Rostova',
-      email: 'elena.rostova@edumanage.com',
-      phone: '+1 (555) 782-4310',
-      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400',
-      employeeId: 'EMP-003',
-      department: 'Humanities',
-      designation: 'Department Chair of Literature',
-      qualification: 'M.A. English Literature (Oxford)',
-      experienceYears: 15,
-      joiningDate: '2016-09-01',
-      monthlySalary: 7200,
-      paidSalaryTotal: 57600,
-      pendingSalaryBalance: 0,
-      attendanceRate: 99.1,
-      subjects: ['World Literature', 'Creative Writing'],
-      assignedClasses: ['Grade 11-A', 'Grade 10-C'],
-      status: 'active',
-    },
-    {
-      _id: 't_seed_4',
-      id: 't_seed_4',
-      name: 'David Chen',
-      email: 'david.chen@edumanage.com',
-      phone: '+1 (555) 901-2345',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
-      employeeId: 'EMP-004',
-      department: 'Technology',
-      designation: 'Lead Computer Science Instructor',
-      qualification: 'B.S. Computer Engineering (UC Berkeley)',
-      experienceYears: 7,
-      joiningDate: '2021-08-20',
-      monthlySalary: 7000,
-      paidSalaryTotal: 49000,
-      pendingSalaryBalance: 0,
-      attendanceRate: 96.8,
-      subjects: ['Computer Science Principles', 'Data Structures'],
-      assignedClasses: ['Grade 11-A'],
-      status: 'active',
-    },
   ];
-
-  const fetchTeachers = async () => {
-    setLoading(true);
-    try {
-      const res = await teacherAPI.getAll();
-      if (res.success && res.data && res.data.length > 0) {
-        setTeachers(res.data);
-      } else {
-        setTeachers(mockTeachers);
-      }
-    } catch (err) {
-      setTeachers(mockTeachers);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     fetchTeachers();
   }, []);
 
-  useEffect(() => {
-    if (loading) return;
-    let savedProfiles = [];
+  const fetchTeachers = async () => {
+    setLoading(true);
+    let savedLocal = [];
     try {
-      savedProfiles = JSON.parse(localStorage.getItem('edumanage_registered_profiles') || '[]').filter(
-        (p) => p.role === 'teacher'
-      );
+      savedLocal = JSON.parse(localStorage.getItem('edumanage_teachers') || '[]');
     } catch (e) {}
 
-    const loggedInTeacher =
-      user && (user.role === 'teacher' || user.email?.includes('teacher'))
-        ? [
-            {
-              _id: user.id || user._id || `t_user_${Date.now()}`,
-              id: user.id || user._id || `t_user_${Date.now()}`,
-              name: user.name || 'Faculty Member',
-              email: user.email || 'teacher@edumanage.com',
-              phone: user.phone || '+1 (555) 234-5678',
-              avatar: user.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
-              employeeId: 'EMP-108',
-              department: 'Academic Faculty',
-              designation: 'Senior Faculty Instructor',
-              qualification: 'M.Ed. Academic Pedagogy',
-              experienceYears: 8,
-              joiningDate: '2023-08-15',
-              monthlySalary: 7500,
-              paidSalaryTotal: 60000,
-              pendingSalaryBalance: 0,
-              attendanceRate: 98.5,
-              subjects: ['Curriculum Specialist'],
-              assignedClasses: ['Grade 11-A'],
-              status: 'active',
-            },
-          ]
-        : [];
+    let fetchedData = mockTeachers;
+    try {
+      const res = await teacherAPI.getAll();
+      if (res.success && res.data && res.data.length > 0) {
+        fetchedData = res.data;
+      }
+    } catch (err) {}
 
-    setTeachers((prev) => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      const combined = [
-        ...loggedInTeacher,
-        ...savedProfiles.map((sp) => ({
-          _id: sp.id || sp._id || sp.email,
-          id: sp.id || sp._id || sp.email,
-          name: sp.name,
-          email: sp.email,
-          phone: sp.phone || '+1 (555) 234-5678',
-          avatar: sp.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
-          employeeId: `EMP-${Math.floor(Math.random() * 800 + 100)}`,
-          department: 'Academic Faculty',
-          designation: 'Faculty Instructor',
-          qualification: 'Certified Educator',
-          experienceYears: 5,
-          joiningDate: '2024-01-10',
-          monthlySalary: 6800,
-          paidSalaryTotal: 54400,
-          pendingSalaryBalance: 0,
-          attendanceRate: 97.5,
-          subjects: ['Faculty Educator'],
-          assignedClasses: ['Grade 10-A'],
-          status: 'active',
-        })),
-        ...safePrev,
-      ];
-
-      return combined.filter(
-        (t, idx, self) => t && t.email && self.findIndex((x) => x && x.email && x.email.toLowerCase() === t.email.toLowerCase()) === idx
-      );
+    const combined = [...savedLocal, ...fetchedData];
+    const normalized = combined.map((t) => {
+      const customAv = t.email ? localStorage.getItem(`edumanage_avatar_${t.email}`) : null;
+      return {
+        ...t,
+        avatar: customAv || t.avatar,
+      };
     });
-  }, [user, loading]);
+
+    const unique = normalized.filter(
+      (t, idx, self) => t && (t._id || t.id || t.email) && self.findIndex((x) => (x.email && t.email && x.email.toLowerCase() === t.email.toLowerCase()) || (x._id || x.id) === (t._id || t.id)) === idx
+    );
+
+    setTeachers(unique);
+    setLoading(false);
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const compressedBase64 = await compressImage(file, 250, 250, 0.6);
+      setFormData((prev) => ({ ...prev, avatar: compressedBase64 }));
+      toast.success('Faculty photo compressed & ready! Click Save to apply.');
+    }
+  };
+
+  const saveTeachersToStorage = (list) => {
+    safeSetItem('edumanage_teachers', JSON.stringify(list));
+    window.dispatchEvent(new Event('storage'));
+  };
 
   const handleSaveTeacher = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email) return;
+    if (!formData.name || !formData.email) {
+      toast.error('Please fill in name and email');
+      return;
+    }
 
     try {
+      const compressedAvatar = formData.avatar ? await compressImage(formData.avatar, 250, 250, 0.6) : formData.avatar;
+      const finalData = { ...formData, avatar: compressedAvatar };
+
+      if (finalData.avatar && finalData.email) {
+        safeSetItem(`edumanage_avatar_${finalData.email}`, finalData.avatar);
+      }
+
+      let updatedList = [];
       if (editingTeacher) {
         try {
-          await teacherAPI.update(editingTeacher._id || editingTeacher.id, formData);
-        } catch (e) {}
-        setTeachers((prev) =>
-          prev.map((t) => ((t._id || t.id) === (editingTeacher._id || editingTeacher.id) ? { ...t, ...formData } : t))
-        );
-        toast.success(`Faculty member ${formData.name} updated`);
-        setEditingTeacher(null);
-      } else {
-        let newT = {
-          _id: `t_${Date.now()}`,
-          id: `t_${Date.now()}`,
-          ...formData,
-          phone: '+1 (555) 000-1122',
-          employeeId: `EMP-00${Math.floor(Math.random() * 90 + 10)}`,
-          experienceYears: 5,
-          joiningDate: new Date().toISOString().split('T')[0],
-          status: 'active',
-          avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
-        };
-        try {
-          const res = await teacherAPI.create(formData);
-          if (res.data) newT = res.data;
+          await teacherAPI.update(editingTeacher._id || editingTeacher.id, finalData);
         } catch (e) {}
 
-        // Save to registered profiles for landing page sync
+        updatedList = teachers.map((t) =>
+          (t._id || t.id) === (editingTeacher._id || editingTeacher.id) ? { ...t, ...finalData } : t
+        );
+        setTeachers(updatedList);
+        saveTeachersToStorage(updatedList);
+        toast.success('Faculty profile & photo updated successfully.');
+        setEditingTeacher(null);
+      } else {
+        let newTeacher = {
+          _id: `t_${Date.now()}`,
+          id: `t_${Date.now()}`,
+          employeeId: `EMP-2026-${Math.floor(Math.random() * 899 + 100)}`,
+          experienceYears: 5,
+          attendanceRate: 99.0,
+          monthlySalary: 70000,
+          status: 'active',
+          avatar: finalData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalData.name)}&background=8b5cf6&color=fff&size=200`,
+          ...finalData,
+        };
+        try {
+          const res = await teacherAPI.create(finalData);
+          if (res && res.data) newTeacher = { ...newTeacher, ...res.data };
+        } catch (e) {}
+
+        updatedList = [newTeacher, ...teachers];
+        setTeachers(updatedList);
+        saveTeachersToStorage(updatedList);
+
+        // Save to registered profiles for dashboard search & feed
         try {
           const profiles = JSON.parse(localStorage.getItem('edumanage_registered_profiles') || '[]');
-          const updated = [{ ...newT, role: 'teacher' }, ...profiles];
-          localStorage.setItem('edumanage_registered_profiles', JSON.stringify(updated));
+          const updatedProfiles = [{ ...newTeacher, role: 'teacher' }, ...profiles];
+          safeSetItem('edumanage_registered_profiles', JSON.stringify(updatedProfiles));
           window.dispatchEvent(new Event('storage'));
         } catch (e) {}
 
-        setTeachers((prev) => [newT, ...prev]);
-        toast.success(`Faculty member ${formData.name} added`);
+        toast.success(`Faculty member ${finalData.name} registered & photo saved`);
         setIsAddModalOpen(false);
       }
-      setFormData({ name: '', email: '', department: 'Science & Innovation', designation: 'Senior Faculty', qualification: 'M.Sc.' });
+      setFormData({ name: '', email: '', department: 'Science & Innovation', designation: 'Senior Faculty', qualification: 'M.Sc.', avatar: '' });
     } catch (err) {
-      toast.error(err.message || 'Failed to save faculty record');
+      toast.error(err.message || 'Failed to save teacher record');
     }
   };
 
   const handleDeleteConfirm = async () => {
     if (!deletingTeacher) return;
     try {
-      await teacherAPI.delete(deletingTeacher._id || deletingTeacher.id);
-      setTeachers((prev) => prev.filter((t) => (t._id || t.id) !== (deletingTeacher._id || deletingTeacher.id)));
-      toast.success(`Faculty record deleted`);
+      try {
+        await teacherAPI.delete(deletingTeacher._id || deletingTeacher.id);
+      } catch (e) {}
+      const updatedList = teachers.filter((t) => (t._id || t.id) !== (deletingTeacher._id || deletingTeacher.id));
+      setTeachers(updatedList);
+      saveTeachersToStorage(updatedList);
+      toast.success(`Teacher ${deletingTeacher.name} deleted`);
       setDeletingTeacher(null);
     } catch (err) {
-      toast.error(err.message || 'Failed to delete faculty record');
+      toast.error(err.message || 'Failed to delete teacher');
     }
   };
 
   const columns = [
     {
       header: 'Photo',
-      cell: (row) => (
-        <img
-          src={row.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100'}
-          alt={row.name}
-          className="w-10 h-10 rounded-xl object-cover border border-slate-800"
-        />
-      ),
+      cell: (row) => {
+        const customAv = row.email ? localStorage.getItem(`edumanage_avatar_${row.email}`) : null;
+        const displayAvatar = customAv || row.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=8b5cf6&color=fff&size=100`;
+        return (
+          <img
+            src={displayAvatar}
+            alt={row.name}
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=8b5cf6&color=fff&size=100`;
+            }}
+            className="w-10 h-10 rounded-xl object-cover border border-slate-800 bg-slate-950"
+          />
+        );
+      },
     },
     {
-      header: 'Faculty Name',
+      header: 'Teacher Name',
       cell: (row) => (
         <div
           onClick={() => navigate(`/dashboard/teachers/${row._id || row.id}`)}
           className="cursor-pointer group text-left"
         >
-          <span className="font-bold text-slate-100 group-hover:text-indigo-400 flex items-center gap-1.5 transition-colors">
-            {row.name} <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-indigo-400" />
+          <span className="font-bold text-slate-100 group-hover:text-purple-400 flex items-center gap-1.5 transition-colors">
+            {row.name} <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-purple-400" />
           </span>
           <span className="text-[11px] text-slate-400 block">{row.email}</span>
         </div>
       ),
     },
     {
-      header: 'Phone',
-      accessor: 'phone',
-    },
-    {
       header: 'Employee ID',
       cell: (row) => (
-        <span className="font-mono text-purple-400 font-bold bg-purple-500/10 px-2 py-0.5 rounded">
-          {row.employeeId}
+        <span className="font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded font-bold">
+          {row.employeeId || 'EMP-001'}
         </span>
       ),
     },
     {
-      header: 'Qualification',
-      accessor: 'qualification',
-    },
-    {
-      header: 'Experience',
-      cell: (row) => <span>{row.experienceYears || '0'} Yrs</span>,
-    },
-    {
-      header: 'Joining Date',
-      accessor: 'joiningDate',
-    },
-    {
       header: 'Department',
-      accessor: 'department',
+      cell: (row) => <Badge variant="purple">{row.department}</Badge>,
     },
     {
-      header: 'Classes',
-      cell: (row) => <span className="truncate max-w-[100px] block">{row.assignedClasses?.join(', ') || 'None'}</span>,
+      header: 'Designation',
+      accessor: 'designation',
     },
     {
-      header: 'Subjects',
-      cell: (row) => <span className="truncate max-w-[100px] block">{row.subjects?.join(', ') || 'None'}</span>,
-    },
-    {
-      header: 'Status',
+      header: 'Actions',
       cell: (row) => (
-        <Badge variant={row.status === 'active' ? 'success' : 'danger'}>
-          {row.status || 'active'}
-        </Badge>
+        <div className="flex items-center gap-1 justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/dashboard/teachers/${row._id || row.id}`)}
+            title="View Faculty Profile & Edit Photo"
+          >
+            View
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditingTeacher(row);
+              setFormData({
+                name: row.name || '',
+                email: row.email || '',
+                department: row.department || 'Science & Innovation',
+                designation: row.designation || 'Senior Faculty',
+                qualification: row.qualification || 'M.Sc.',
+                avatar: row.avatar || '',
+              });
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => setDeletingTeacher(row)}
+          >
+            Delete
+          </Button>
+        </div>
       ),
     },
   ];
 
   return (
     <div className="space-y-6">
+      {/* Hidden File Input for Faculty Photo Upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handlePhotoUpload}
+        className="hidden"
+      />
+
       <DataTable
-        title="Faculty & Teacher Directory"
-        subtitle="Manage academic department leads, qualifications, and faculty contracts"
+        title="Teacher & Faculty Management"
+        subtitle="Manage faculty credentials, academic departments, assigned classes, and payroll records"
         columns={columns}
         data={teachers}
         loading={loading}
         filterKey="department"
-        filterOptions={['Science & Innovation', 'Mathematics', 'Technology', 'Humanities']}
-        emptyStateTitle="No teachers found."
+        filterOptions={['Science & Innovation', 'Mathematics', 'Humanities', 'Technology']}
+        emptyStateTitle="No faculty members registered."
         onAdd={() => {
           setEditingTeacher(null);
-          setFormData({ name: '', email: '', department: 'Science & Innovation', designation: 'Senior Faculty', qualification: 'M.Sc.' });
+          setFormData({ name: '', email: '', department: 'Science & Innovation', designation: 'Senior Faculty', qualification: 'M.Sc.', avatar: '' });
           setIsAddModalOpen(true);
         }}
-        onView={(t) => navigate(`/dashboard/teachers/${t._id || t.id}`)}
-        onEdit={(t) => {
-          setEditingTeacher(t);
-          setFormData({ name: t.name, email: t.email, department: t.department, designation: t.designation, qualification: t.qualification });
-        }}
-        onDelete={(t) => setDeletingTeacher(t)}
       />
 
+      {/* Add / Edit Teacher Modal */}
       <Modal
         isOpen={isAddModalOpen || !!editingTeacher}
         onClose={() => {
@@ -404,7 +334,7 @@ export const TeacherManagement = () => {
       >
         <form onSubmit={handleSaveTeacher} className="space-y-4">
           <Input
-            label="Faculty Name *"
+            label="Full Name *"
             placeholder="Dr. Sarah Connor"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -413,7 +343,7 @@ export const TeacherManagement = () => {
           <Input
             label="Email Address *"
             type="email"
-            placeholder="sarah.c@edumanage.com"
+            placeholder="sarah.connor@edumanage.com"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             required
@@ -430,40 +360,80 @@ export const TeacherManagement = () => {
                 <option value="Mathematics">Mathematics</option>
                 <option value="Technology">Technology</option>
                 <option value="Humanities">Humanities</option>
+                <option value="Commerce & Management">Commerce & Management</option>
               </select>
             </div>
             <Input
               label="Designation"
-              placeholder="Senior Faculty"
+              placeholder="Head of Physics Department"
               value={formData.designation}
               onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
             />
           </div>
-          <Input
-            label="Qualification / Degrees"
-            placeholder="Ph.D. Quantum Physics"
-            value={formData.qualification}
-            onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
-          />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-            <Button type="button" variant="outline" size="sm" onClick={() => { setIsAddModalOpen(false); setEditingTeacher(null); }}>
+
+          {/* Photo Upload & URL field */}
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold uppercase text-slate-400">Faculty Profile Photo</label>
+            <div className="flex gap-2">
+              <Input
+                icon={ImageIcon}
+                placeholder="Paste Image URL or click Upload"
+                value={formData.avatar}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  const compressed = await compressImage(val, 250, 250, 0.6);
+                  setFormData({ ...formData, avatar: compressed });
+                }}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 flex items-center gap-1"
+              >
+                <Upload className="w-3.5 h-3.5" /> Upload File
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsAddModalOpen(false);
+                setEditingTeacher(null);
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">
-              {editingTeacher ? 'Update Faculty' : 'Register Faculty'}
+              {editingTeacher ? 'Save Changes' : 'Register Faculty Member'}
             </Button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={!!deletingTeacher} onClose={() => setDeletingTeacher(null)} title="Remove Faculty Member">
+      {/* Delete Teacher Modal */}
+      <Modal
+        isOpen={!!deletingTeacher}
+        onClose={() => setDeletingTeacher(null)}
+        title="Confirm Teacher Deletion"
+      >
         <div className="space-y-4">
           <p className="text-xs text-slate-300">
-            Are you sure you want to remove <b>{deletingTeacher?.name}</b>?
+            Are you sure you want to delete teacher <b>"{deletingTeacher?.name}"</b>?
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setDeletingTeacher(null)}>Cancel</Button>
-            <Button variant="danger" size="sm" onClick={handleDeleteConfirm}>Confirm Remove</Button>
+            <Button variant="outline" size="sm" onClick={() => setDeletingTeacher(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDeleteConfirm}>
+              Confirm Delete
+            </Button>
           </div>
         </div>
       </Modal>

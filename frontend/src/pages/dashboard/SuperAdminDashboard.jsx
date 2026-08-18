@@ -35,7 +35,8 @@ export const SuperAdminDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const { token } = useAuth();
+  const [localUsers, setLocalUsers] = useState([]);
+  const { user, token } = useAuth();
 
   useEffect(() => {
     fetchDashboard();
@@ -49,6 +50,46 @@ export const SuperAdminDashboard = () => {
     }
     setLoading(false);
   };
+
+  // Synchronize registered & currently logged-in users from localStorage into Dashboard feed
+  useEffect(() => {
+    const syncUsers = () => {
+      let savedProfiles = [];
+      try {
+        savedProfiles = JSON.parse(localStorage.getItem('edumanage_registered_profiles') || '[]');
+      } catch (e) {}
+
+      const currentUserObj = user ? [user] : [];
+      const allRegistered = [...currentUserObj, ...savedProfiles];
+
+      const formatted = allRegistered.map((u, idx) => {
+        let formattedRole = 'Student';
+        if (u.role === 'super_admin' || u.email?.includes('admin')) formattedRole = 'Super Admin';
+        else if (u.role === 'teacher' || u.email?.includes('teacher')) formattedRole = 'Teacher';
+        else if (u.role === 'parent' || u.email?.includes('parent')) formattedRole = 'Parent';
+
+        return {
+          id: u.id || u._id || u.email || `reg_u_${idx}`,
+          name: u.name || u.email?.split('@')[0] || 'Registered User',
+          role: formattedRole,
+          email: u.email || 'user@edumanage.com',
+          date: u.date || new Date().toISOString().split('T')[0],
+          status: 'Active',
+          avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+        };
+      });
+
+      const unique = formatted.filter(
+        (u, index, self) => u && u.email && self.findIndex((x) => x && x.email && x.email.toLowerCase() === u.email.toLowerCase()) === index
+      );
+
+      setLocalUsers(unique);
+    };
+
+    syncUsers();
+    window.addEventListener('storage', syncUsers);
+    return () => window.removeEventListener('storage', syncUsers);
+  }, [user]);
 
   if (loading) {
     return (
@@ -83,12 +124,19 @@ export const SuperAdminDashboard = () => {
     { month: 'Jun', students: 1450, revenue: 128400 },
   ];
 
-  const recentUsers = (data?.recentUsers || [
-    { id: 1, name: 'Dr. Sarah Connor', role: 'Teacher', email: 'sarah.c@edumanage.com', date: '2026-08-01', status: 'Active' },
-    { id: 2, name: 'Alex Rivera', role: 'Student', email: 'alex.r@student.edu', date: '2026-08-02', status: 'Active' },
-    { id: 3, name: 'Michael Vance', role: 'Parent', email: 'vance.m@gmail.com', date: '2026-08-03', status: 'Pending' },
-    { id: 4, name: 'Elena Rostova', role: 'Teacher', email: 'elena.r@edumanage.com', date: '2026-08-04', status: 'Active' },
-  ]).filter((u) => u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.role.toLowerCase().includes(searchTerm.toLowerCase()));
+  const recentUsers = [
+    ...localUsers,
+    ...(data?.recentUsers || [
+      { id: 'm_1', name: 'Dr. Sarah Connor', role: 'Teacher', email: 'sarah.c@edumanage.com', date: '2026-08-01', status: 'Active' },
+      { id: 'm_2', name: 'Alex Rivera', role: 'Student', email: 'alex.r@student.edu', date: '2026-08-02', status: 'Active' },
+      { id: 'm_3', name: 'Michael Vance', role: 'Parent', email: 'vance.m@gmail.com', date: '2026-08-03', status: 'Pending' },
+      { id: 'm_4', name: 'Elena Rostova', role: 'Teacher', email: 'elena.r@edumanage.com', date: '2026-08-04', status: 'Active' },
+    ]),
+  ]
+    .filter(
+      (u, index, self) => u && u.email && self.findIndex((x) => x && x.email && x.email.toLowerCase() === u.email.toLowerCase()) === index
+    )
+    .filter((u) => u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.role.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="space-y-6 sm:space-y-8 min-w-0 max-w-full">
@@ -139,43 +187,37 @@ export const SuperAdminDashboard = () => {
 
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Monthly Revenue</span>
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Parent Accounts</span>
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-white mt-2 sm:mt-3 truncate">₹{stats.monthlyRevenue.toLocaleString()}</div>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-400 mt-1">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>+12.1% tuition growth</span>
-          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-white mt-2 sm:mt-3">{stats.totalParents}</div>
+          <div className="text-xs text-emerald-400 mt-1">✓ Active Portal Logins</div>
         </Card>
 
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">System SLA Uptime</span>
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Monthly Revenue</span>
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-              <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-white mt-2 sm:mt-3">{stats.systemUptime}</div>
-          <div className="text-xs text-emerald-400 mt-1">All services online</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-white mt-2 sm:mt-3">${stats.monthlyRevenue.toLocaleString()}</div>
+          <div className="text-xs text-amber-400 mt-1">Fee Collections</div>
         </Card>
       </div>
 
-      {/* Chart Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 min-w-0">
-        <Card className="lg:col-span-2 p-4 sm:p-6 min-w-0">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
-            <div>
-              <h3 className="text-base font-bold text-white">Enrollment & Revenue Expansion</h3>
-              <p className="text-xs text-slate-400">6-month growth trajectory metrics</p>
-            </div>
-            <Badge variant="success">LIVE RECHARTS</Badge>
-          </div>
-          <div className="h-56 sm:h-64 w-full min-w-0">
+      {/* Main Grid: Enrollment Trend + Recent Notices */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 p-4 sm:p-6">
+          <CardHeader className="p-0 mb-4">
+            <CardTitle className="text-base text-white">Enrollment & Revenue Trend</CardTitle>
+            <CardDescription className="text-xs text-slate-400">Monthly student onboarding vs fee collections</CardDescription>
+          </CardHeader>
+          <div className="h-64 sm:h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
@@ -185,18 +227,19 @@ export const SuperAdminDashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                 <XAxis dataKey="month" stroke="#64748b" fontSize={11} />
                 <YAxis stroke="#64748b" fontSize={11} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }}
-                />
-                <Area type="monotone" dataKey="students" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorStudents)" />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }} />
+                <Area type="monotone" dataKey="students" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorStudents)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
-        {/* Notices list */}
-        <Card className="p-4 sm:p-6">
-          <h3 className="text-base font-bold text-white mb-4">School System Notices</h3>
+        <Card className="p-4 sm:p-6 space-y-4">
+          <CardHeader className="p-0">
+            <CardTitle className="text-base text-white">Institutional Notices</CardTitle>
+            <CardDescription className="text-xs text-slate-400">Recent announcements</CardDescription>
+          </CardHeader>
+
           <div className="space-y-3">
             {[
               { title: 'Annual Sports Day Registration Open', date: 'Aug 04', category: 'Event' },
@@ -218,18 +261,18 @@ export const SuperAdminDashboard = () => {
       {/* Top Performing Students Widget */}
       <TopStudentsWidget />
 
-      {/* User Management Table */}
+      {/* User Management Table - Dynamic Active User Feed */}
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h3 className="text-base font-bold text-white">Recent System Users</h3>
-            <p className="text-xs text-slate-400">Super Admin user oversight & status logs</p>
+            <h3 className="text-base font-bold text-white">Active Logged-In Users & Accounts Feed</h3>
+            <p className="text-xs text-slate-400">Real-time user logins across Student, Teacher, Parent & Admin portals</p>
           </div>
           <div className="relative w-full sm:w-64">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search user..."
+              placeholder="Search user, role, email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full text-xs rounded-xl pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -241,31 +284,59 @@ export const SuperAdminDashboard = () => {
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
               <tr className="border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-950/60">
-                <th className="py-3 px-4">User Name</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Date Joined</th>
-                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">User Account Name</th>
+                <th className="py-3 px-4">Portal Role</th>
+                <th className="py-3 px-4">Email Address</th>
+                <th className="py-3 px-4">Date Logged In</th>
+                <th className="py-3 px-4">Account Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-xs">
-              {recentUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3 px-4 font-semibold text-slate-200 whitespace-nowrap">{u.name}</td>
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <Badge variant={u.role === 'Teacher' ? 'purple' : u.role === 'Student' ? 'success' : 'warning'}>
-                      {u.role}
-                    </Badge>
-                  </td>
-                  <td className="py-3 px-4 text-slate-400 whitespace-nowrap">{u.email}</td>
-                  <td className="py-3 px-4 text-slate-400 whitespace-nowrap">{u.date}</td>
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
-                      <CheckCircle className="w-3.5 h-3.5" /> {u.status}
-                    </span>
+              {recentUsers.length > 0 ? (
+                recentUsers.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-slate-200 whitespace-nowrap flex items-center gap-2">
+                      <img
+                        src={localStorage.getItem(`edumanage_avatar_${u.email}`) || u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=6366f1&color=fff&size=100`}
+                        alt={u.name}
+                        onError={(e) => {
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=6366f1&color=fff&size=100`;
+                        }}
+                        className="w-8 h-8 rounded-full object-cover border border-slate-700 bg-slate-950"
+                      />
+                      <span>{u.name}</span>
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <Badge
+                        variant={
+                          u.role === 'Super Admin'
+                            ? 'purple'
+                            : u.role === 'Teacher'
+                            ? 'indigo'
+                            : u.role === 'Student'
+                            ? 'success'
+                            : 'warning'
+                        }
+                      >
+                        {u.role}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 text-slate-300 font-mono whitespace-nowrap">{u.email}</td>
+                    <td className="py-3 px-4 text-slate-400 whitespace-nowrap">{u.date}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                        <CheckCircle className="w-3.5 h-3.5" /> {u.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-slate-400">
+                    No active user accounts found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

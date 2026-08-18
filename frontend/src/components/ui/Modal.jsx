@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export const Modal = ({ isOpen, onClose, title, children }) => {
+export const Modal = ({ isOpen, onClose, title, children, size = 'lg', maxWidth, className = '' }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
@@ -18,9 +18,24 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
 
   if (!isOpen) return null;
 
+  const sizeClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
+    '6xl': 'max-w-6xl',
+    full: 'max-w-7xl',
+  };
+
+  const resolvedWidth = maxWidth || sizeClasses[size] || 'max-w-lg';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm transition-opacity duration-200 overflow-y-auto">
-      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-4 sm:p-6 dark:bg-slate-900 dark:border-slate-800 light:bg-white light:border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-sm transition-opacity duration-200 overflow-y-auto">
+      <div className={`relative w-full ${resolvedWidth} max-h-[90vh] flex flex-col rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-4 sm:p-6 dark:bg-slate-900 dark:border-slate-800 light:bg-white light:border-slate-200 animate-in fade-in zoom-in-95 duration-200 ${className}`}>
         <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-800 dark:border-slate-800 light:border-slate-200 shrink-0">
           <h3 className="text-base sm:text-lg font-bold text-slate-100 dark:text-slate-100 light:text-slate-900 truncate pr-2">
             {title}

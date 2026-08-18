@@ -19,10 +19,16 @@ import {
   Command,
   Menu,
   X,
+  Eye,
+  Trash2,
+  CheckCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { GlobalSearchModal } from '../../components/enterprise/GlobalSearchModal';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
 import { toast } from '../../components/ui/toast';
 
 export const DashboardLayout = () => {
@@ -30,9 +36,64 @@ export const DashboardLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [viewingNotification, setViewingNotification] = useState(null);
+
+  // Default seed notifications list
+  const defaultNotifs = [
+    {
+      id: 'notif_default_1',
+      title: 'Annual Sports Meet 2026 Schedule',
+      content: 'Registration is now open for all grades (Nursery to 12th). Check the sports portal for event timings and trial rules.',
+      category: 'Sports & Event',
+      targetAudience: 'all',
+      date: '2026-08-18',
+      read: false,
+    },
+    {
+      id: 'notif_default_2',
+      title: 'Mid-Term Board Grade Publishing',
+      content: 'Gradebooks updated for Grade 11-A and Grade 10 Board Batch. Verify subject marks under Exams & Results.',
+      category: 'Academic',
+      targetAudience: 'all',
+      date: '2026-08-17',
+      read: false,
+    },
+  ];
+
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem('edumanage_notifications');
+      if (saved) return JSON.parse(saved);
+      localStorage.setItem('edumanage_notifications', JSON.stringify(defaultNotifs));
+      return defaultNotifs;
+    } catch (e) {
+      return defaultNotifs;
+    }
+  });
+
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Listen to real-time notice published events
+  useEffect(() => {
+    const syncNotifications = () => {
+      try {
+        const saved = localStorage.getItem('edumanage_notifications');
+        if (saved) {
+          setNotifications(JSON.parse(saved));
+        }
+      } catch (e) {}
+    };
+
+    syncNotifications();
+    window.addEventListener('notice_published', syncNotifications);
+    window.addEventListener('storage', syncNotifications);
+    return () => {
+      window.removeEventListener('notice_published', syncNotifications);
+      window.removeEventListener('storage', syncNotifications);
+    };
+  }, []);
 
   // Keyboard shortcut Ctrl+K / Cmd+K for command palette
   useEffect(() => {
@@ -69,6 +130,32 @@ export const DashboardLayout = () => {
     navigate('/login');
   };
 
+  const handleMarkAllRead = () => {
+    const updated = notifications.map((n) => ({ ...n, read: true }));
+    setNotifications(updated);
+    localStorage.setItem('edumanage_notifications', JSON.stringify(updated));
+    toast.success('All notifications marked as read.');
+  };
+
+  const handleDeleteNotification = (id, e) => {
+    e.stopPropagation();
+    const updated = notifications.filter((n) => n.id !== id);
+    setNotifications(updated);
+    localStorage.setItem('edumanage_notifications', JSON.stringify(updated));
+    toast.success('Notification removed');
+  };
+
+  const handleViewNotification = (notif) => {
+    setViewingNotification(notif);
+    // Mark this specific notification as read
+    const updated = notifications.map((n) => (n.id === notif.id ? { ...n, read: true } : n));
+    setNotifications(updated);
+    localStorage.setItem('edumanage_notifications', JSON.stringify(updated));
+    setShowNotifications(false);
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   const roleColors = {
     super_admin: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
     teacher: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
@@ -90,8 +177,8 @@ export const DashboardLayout = () => {
           { name: 'Subjects Catalog', icon: BookOpen, path: '/dashboard/subjects' },
           { name: 'Notice Board', icon: Bell, path: '/dashboard/notices' },
           { name: 'Exams & Results', icon: Award, path: '/dashboard/exams' },
-          { name: 'Tuition Fee Invoices', icon: DollarSign, path: '/dashboard/fees' },
-          { name: 'Faculty Salary & Payroll', icon: DollarSign, path: '/dashboard/salary' },
+          { name: 'Student Fee', icon: DollarSign, path: '/dashboard/fees' },
+          { name: 'Teacher Salary', icon: DollarSign, path: '/dashboard/salary' },
           { name: 'Library Catalog', icon: BookOpen, path: '/dashboard/library' },
           { name: 'Bus Transport', icon: Calendar, path: '/dashboard/transport' },
           { name: 'Admissions Pipeline', icon: UserCheck, path: '/dashboard/admissions' },
@@ -139,88 +226,84 @@ export const DashboardLayout = () => {
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm lg:hidden transition-opacity duration-300"
-          aria-hidden="true"
+          className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm lg:hidden transition-opacity"
         />
       )}
 
-      {/* Sidebar (Desktop Fixed / Mobile Drawer) */}
+      {/* Sidebar Navigation */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800/80 bg-slate-900/95 backdrop-blur-xl transition-all duration-300 dark:bg-slate-900/95 dark:border-slate-800 light:bg-white light:border-slate-200 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 bg-slate-900/95 border-r border-slate-800/80 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 ${
           collapsed ? 'lg:w-20' : 'lg:w-64'
-        } w-72 ${
-          mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+        } ${
+          mobileOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        {/* Top Sidebar Header */}
-        <div className="h-16 sm:h-20 flex items-center justify-between px-4 border-b border-slate-800/80 dark:border-slate-800 light:border-slate-200 shrink-0">
-          <Link to="/" className="flex items-center gap-3 overflow-hidden">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-600/30">
-              <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className={`truncate ${collapsed ? 'lg:hidden' : 'block'}`}>
-              <span className="text-sm sm:text-base font-extrabold text-white dark:text-white light:text-slate-900 block leading-tight">
-                EduManage <span className="text-indigo-400">PRO</span>
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {user?.role?.replace('_', ' ')}
-              </span>
-            </div>
-          </Link>
+        {/* Brand Header */}
+        <div>
+          <div className="h-16 sm:h-20 px-4 sm:px-6 flex items-center justify-between border-b border-slate-800/80">
+            <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 shrink-0">
+                <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div className={`min-w-0 ${collapsed ? 'lg:hidden' : 'block'}`}>
+                <div className="font-extrabold text-white text-base tracking-tight truncate">EduManage PRO</div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate">Academic OS</div>
+              </div>
+            </Link>
 
-          {/* Desktop Collapse Button */}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden lg:flex p-1.5 rounded-xl border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+            {/* Desktop Collapse Toggle */}
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="hidden lg:flex p-1.5 rounded-xl border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
+            >
+              {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
 
-          {/* Mobile Close Button */}
-          <button
-            onClick={() => setMobileOpen(false)}
-            aria-label="Close sidebar navigation"
-            className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close mobile navigation"
+              className="lg:hidden p-1.5 rounded-xl text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Navigation Links List */}
+          <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-10rem)]">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20 font-bold'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className={`truncate ${collapsed ? 'lg:hidden' : 'block'}`}>{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Sidebar Nav Items */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto min-h-0">
-          {navItems.map((item) => {
-            const IconComp = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all min-h-[40px] ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60 dark:hover:bg-slate-800/60 light:text-slate-600 light:hover:bg-slate-100 light:hover:text-slate-900'
-                }`}
-              >
-                <IconComp className="w-4 h-4 shrink-0" />
-                <span className={`truncate ${collapsed ? 'lg:hidden' : 'block'}`}>{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Footer User Info */}
-        <div className="p-3 border-t border-slate-800/80 dark:border-slate-800 light:border-slate-200 shrink-0">
+        {/* Sidebar Footer User Badge */}
+        <div className="p-3 sm:p-4 border-t border-slate-800/80">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <img
                 src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'}
-                alt={user?.name || 'User Profile'}
+                alt={user?.name || 'User'}
                 className="w-9 h-9 rounded-full object-cover border border-indigo-500/30 shrink-0"
               />
               <div className={`min-w-0 ${collapsed ? 'lg:hidden' : 'block'}`}>
-                <div className="text-xs font-bold text-slate-100 dark:text-white light:text-slate-900 truncate">
+                <div className="text-xs font-bold text-slate-100 truncate">
                   {user?.name || 'Alexander Wright'}
                 </div>
                 <div className="text-[10px] text-slate-400 truncate">
@@ -302,28 +385,84 @@ export const DashboardLayout = () => {
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 aria-label="View system notifications"
-                className="relative p-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white transition-colors"
+                className="relative p-2.5 rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white transition-colors"
               >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500" />
+                <Bell className="w-4.5 h-4.5" />
+                {unreadCount > 0 && (
+                  <>
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
+                  </>
+                )}
               </button>
 
+              {/* Real-time Notifications Bell Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-3 z-50 max-w-[calc(100vw-2rem)]">
+                <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-3 z-50 max-w-[calc(100vw-1.5rem)]">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                    <span className="text-xs font-bold text-white">Notifications</span>
-                    <span className="text-[10px] text-indigo-400 font-semibold cursor-pointer">Mark all read</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white">Notifications Bulletin</span>
+                      {unreadCount > 0 && (
+                        <Badge variant="purple" className="text-[9px] px-1.5 py-0.2">
+                          {unreadCount} New
+                        </Badge>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1"
+                    >
+                      <CheckCheck className="w-3 h-3" /> Mark all read
+                    </button>
                   </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                      <p className="font-semibold text-slate-200">Annual Sports Meet Schedule</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Registration now open for all grades.</p>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                      <p className="font-semibold text-slate-200">Mid-Term Grade Publishing</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Gradebooks updated for Grade 11-A.</p>
-                    </div>
+
+                  <div className="space-y-2 text-xs max-h-80 overflow-y-auto pr-1">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className={`p-3 rounded-xl border transition-all ${
+                            !n.read
+                              ? 'bg-indigo-500/10 border-indigo-500/30'
+                              : 'bg-slate-950 border-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-slate-100 text-xs line-clamp-1">{n.title}</h4>
+                              <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">{n.content}</p>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <Badge variant="purple" className="text-[9px]">{n.category || 'Announcement'}</Badge>
+                                <span className="text-[9px] text-slate-500">{n.date}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {/* 👁️ View Notification Button */}
+                              <button
+                                onClick={() => handleViewNotification(n)}
+                                title="View Full Notice Details"
+                                className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* 🗑️ Delete Notification Button */}
+                              <button
+                                onClick={(e) => handleDeleteNotification(n.id, e)}
+                                title="Delete Notification"
+                                className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-6 text-center text-slate-500 text-xs">
+                        No notifications found.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -336,6 +475,34 @@ export const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* 👁️ VIEW FULL NOTICE NOTIFICATION DETAIL MODAL */}
+      <Modal isOpen={!!viewingNotification} onClose={() => setViewingNotification(null)} title="Official Notice Announcement">
+        {viewingNotification && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Badge variant="purple">{viewingNotification.category || 'General Announcement'}</Badge>
+              <span className="text-xs text-slate-400 font-mono">{viewingNotification.date}</span>
+            </div>
+
+            <h2 className="text-lg font-bold text-white">{viewingNotification.title}</h2>
+
+            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3 text-xs text-slate-200">
+              <p className="leading-relaxed whitespace-pre-wrap">{viewingNotification.content}</p>
+              <div className="pt-2 border-t border-slate-800 flex justify-between text-[10px] text-slate-400">
+                <span>Target Audience: <b className="text-indigo-400 uppercase">{viewingNotification.targetAudience || 'ALL'}</b></span>
+                <span>Sender: <b className="text-white">Super Admin Office</b></span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setViewingNotification(null)}>
+                Close Notice
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Enterprise Global Command Palette Modal */}
       <GlobalSearchModal

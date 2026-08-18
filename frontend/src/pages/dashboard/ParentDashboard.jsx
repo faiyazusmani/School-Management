@@ -19,8 +19,10 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { toast } from '../../components/ui/toast';
 import { profileAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export const ParentDashboard = () => {
+  const { user: currentUser } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,16 +33,16 @@ export const ParentDashboard = () => {
   useEffect(() => {
     const defaultParentDashboard = {
       parent: {
-        name: 'Marcus Rivera',
-        email: 'parent@edumanage.com',
-        phone: '+1 (555) 890-1234',
-        occupation: 'Senior Software Architect',
+        name: currentUser?.name || 'Parent Observer',
+        email: currentUser?.email || 'parent@edumanage.com',
+        phone: currentUser?.phone || '+91 98765 43210',
+        occupation: currentUser?.occupation || 'Business Professional',
       },
       children: [
         {
           id: 'st_1',
-          name: 'Lucas Rivera',
-          admissionNumber: 'ADM-2026-101',
+          name: 'Student Child',
+          admissionNumber: currentUser?.linkedStudentAdmissionNumber || 'ADM-2026-101',
           rollNumber: '101',
           gradeLevel: 'Grade 11',
           section: 'A',
@@ -78,7 +80,7 @@ export const ParentDashboard = () => {
       }
     };
     fetchDashboard();
-  }, []);
+  }, [currentUser]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -105,11 +107,12 @@ export const ParentDashboard = () => {
     );
   }
 
-  const profile = dashboardData?.profile || dashboardData?.parent || {
-    name: 'Marcus Rivera',
-    email: 'parent@edumanage.com',
-    phone: '+1 (555) 890-1234',
-    occupation: 'Senior Software Architect',
+  const rawProfile = dashboardData?.profile || dashboardData?.parent || {};
+  const profile = {
+    name: currentUser?.name || rawProfile.name || 'Parent',
+    email: currentUser?.email || rawProfile.email || 'N/A',
+    phone: currentUser?.phone || rawProfile.phone || 'N/A',
+    occupation: currentUser?.occupation || rawProfile.occupation || 'Guardian',
   };
   const children = dashboardData?.children || [];
 

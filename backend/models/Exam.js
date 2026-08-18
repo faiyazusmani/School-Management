@@ -9,7 +9,7 @@ const examSchema = new mongoose.Schema(
     },
     term: {
       type: String,
-      enum: ['Mid-Term', 'Final', 'Quiz', 'Unit Test'],
+      enum: ['Mid-Term', 'Final', 'Quiz', 'Unit Test', 'Half Yearly', 'Half Yearly Examination', 'Term 1', 'Term 2', 'Annual', 'Quarterly'],
       default: 'Mid-Term',
     },
     subject: {

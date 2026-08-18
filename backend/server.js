@@ -70,9 +70,9 @@ app.use(
 // Cookie Parser Middleware
 app.use(cookieParser());
 
-// Body Parser Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Body Parser Middleware (High 50MB Payload limit for Base64 Profile Photo uploads)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Passport Middleware
 app.use(passport.initialize());
@@ -111,25 +111,13 @@ if (process.env.NODE_ENV === 'production') {
 app.use(notFound);
 app.use(errorHandler);
 
-const DEFAULT_PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
-// Port listening logic with EADDRINUSE fallback handling
-const startServer = (port) => {
-  const server = app
-    .listen(port, () => {
-      console.log(`🚀 EduManage Pro Enterprise Server running in ${process.env.NODE_ENV || 'development'} mode on port ${port}`);
-    })
-    .on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        console.warn(`⚠️ Port ${port} is occupied. Retrying with port ${port + 1}...`);
-        startServer(port + 1);
-      } else {
-        console.error('Server error:', err.message);
-      }
-    });
-};
-
-// Ensure MongoDB connection is initialized BEFORE starting Express server
-connectDB().finally(() => {
-  startServer(DEFAULT_PORT);
+// Connect to Mongo DB then start Express Server
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 EduManage PRO Backend Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  });
+}).catch((err) => {
+  console.error('Failed to start server:', err.message);
 });

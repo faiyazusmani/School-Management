@@ -19,8 +19,10 @@ import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { toast } from '../../components/ui/toast';
 import { profileAPI, studentAPI, attendanceAPI, homeworkAPI, resultAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export const TeacherDashboard = () => {
+  const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,12 +40,12 @@ export const TeacherDashboard = () => {
 
   useEffect(() => {
     const defaultTeacherProfile = {
-      name: 'Dr. Sarah Connor',
-      employeeId: 'EMP-001',
-      department: 'Science & Innovation',
-      designation: 'Head of Physics Department',
-      qualification: 'Ph.D. Quantum Physics (MIT)',
-      experienceYears: 12,
+      name: currentUser?.name || 'Dr. Sarah Connor',
+      employeeId: currentUser?.employeeId || 'EMP-001',
+      department: currentUser?.department || 'Science & Innovation',
+      designation: currentUser?.designation || 'Faculty Member',
+      qualification: currentUser?.qualification || 'Ph.D. Quantum Physics',
+      experienceYears: currentUser?.experienceYears || 5,
       joiningDate: '2018-08-15',
       monthlySalary: 75000,
       paidSalaryTotal: 600000,
@@ -57,7 +59,14 @@ export const TeacherDashboard = () => {
         setLoading(true);
         const res = await profileAPI.getDashboardData();
         if (res.success && res.data && res.data.profile) {
-          setProfile(res.data.profile);
+          setProfile({
+            ...res.data.profile,
+            name: currentUser?.name || res.data.profile.name,
+            email: currentUser?.email || res.data.profile.email,
+            department: currentUser?.department || res.data.profile.department,
+            qualification: currentUser?.qualification || res.data.profile.qualification,
+            employeeId: currentUser?.employeeId || res.data.profile.employeeId,
+          });
         } else {
           setProfile(defaultTeacherProfile);
         }
@@ -68,7 +77,7 @@ export const TeacherDashboard = () => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [currentUser]);
 
   // Fetch real class students when selectedClass changes
   useEffect(() => {

@@ -6,6 +6,7 @@ const {
   verifyOtp,
   resendOtp,
   getMe,
+  updateProfile,
   forgotPassword,
   resetPassword,
   googleCallback,
@@ -23,6 +24,7 @@ router.post('/verify-otp', verifyOtp);
 router.post('/resend-otp', resendOtp);
 
 router.get('/me', protect, getMe);
+router.put('/profile', protect, updateProfile);
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:resettoken', resetPassword);
 router.post('/refresh', refreshToken);

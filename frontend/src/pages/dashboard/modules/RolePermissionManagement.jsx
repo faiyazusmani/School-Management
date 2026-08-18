@@ -10,7 +10,7 @@ export const RolePermissionManagement = () => {
     { module: 'Student Management', admin: { read: true, write: true, delete: true }, teacher: { read: true, write: true, delete: false }, student: { read: true, write: false, delete: false }, parent: { read: true, write: false, delete: false } },
     { module: 'Teacher Directory', admin: { read: true, write: true, delete: true }, teacher: { read: true, write: false, delete: false }, student: { read: true, write: false, delete: false }, parent: { read: true, write: false, delete: false } },
     { module: 'Exam Gradebook', admin: { read: true, write: true, delete: true }, teacher: { read: true, write: true, delete: false }, student: { read: true, write: false, delete: false }, parent: { read: true, write: false, delete: false } },
-    { module: 'Tuition Fee Invoices', admin: { read: true, write: true, delete: true }, teacher: { read: false, write: false, delete: false }, student: { read: true, write: false, delete: false }, parent: { read: true, write: true, delete: false } },
+    { module: 'Student Fee', admin: { read: true, write: true, delete: true }, teacher: { read: false, write: false, delete: false }, student: { read: true, write: false, delete: false }, parent: { read: true, write: true, delete: false } },
     { module: 'Notice Board', admin: { read: true, write: true, delete: true }, teacher: { read: true, write: true, delete: false }, student: { read: true, write: false, delete: false }, parent: { read: true, write: false, delete: false } },
   ]);
 

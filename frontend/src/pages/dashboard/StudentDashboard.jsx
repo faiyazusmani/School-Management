@@ -22,8 +22,10 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { toast } from '../../components/ui/toast';
 import { profileAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export const StudentDashboard = () => {
+  const { user: currentUser } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,11 +33,11 @@ export const StudentDashboard = () => {
   useEffect(() => {
     const defaultStudentDashboard = {
       profile: {
-        name: 'Lucas Rivera',
-        rollNumber: '101',
-        admissionNumber: 'ADM-2026-101',
-        gradeLevel: 'Grade 11',
-        section: 'A',
+        name: currentUser?.name || 'Student Portal',
+        rollNumber: currentUser?.rollNumber || '101',
+        admissionNumber: currentUser?.admissionNumber || 'ADM-2026-101',
+        gradeLevel: currentUser?.gradeLevel || currentUser?.classGrade || 'Grade 11',
+        section: currentUser?.section || 'A',
         gpa: 3.88,
         attendanceRate: 96.2,
         presentDays: 135,
@@ -53,7 +55,7 @@ export const StudentDashboard = () => {
         leaveDays: 1,
         paidFees: 48500,
         pendingFees: 0,
-        admissionNumber: 'ADM-2026-101',
+        admissionNumber: currentUser?.admissionNumber || 'ADM-2026-101',
       },
       homeworks: [
         { title: 'Quantum Mechanics Problem Set #4', subject: 'Advanced Physics', dueDate: '2026-08-28', status: 'Pending' },
@@ -82,7 +84,7 @@ export const StudentDashboard = () => {
       }
     };
     fetchDashboard();
-  }, []);
+  }, [currentUser]);
 
   const handleAssignmentUpload = (title) => {
     toast.success(`Assignment file uploaded for "${title}"`);
@@ -106,7 +108,27 @@ export const StudentDashboard = () => {
     );
   }
 
-  const profile = dashboardData?.profile || dashboardData?.student || {};
+  const rawProfile = dashboardData?.profile || dashboardData?.student || {};
+  const profile = {
+    name: currentUser?.name || rawProfile.name || 'Student',
+    email: currentUser?.email || rawProfile.email || 'N/A',
+    phone: currentUser?.phone || rawProfile.phone || 'N/A',
+    fatherName: currentUser?.fatherName || rawProfile.fatherName || 'N/A',
+    motherName: currentUser?.motherName || rawProfile.motherName || 'N/A',
+    rollNumber: currentUser?.rollNumber || rawProfile.rollNumber || '101',
+    admissionNumber: currentUser?.admissionNumber || rawProfile.admissionNumber || 'ADM-2026-101',
+    gradeLevel: currentUser?.gradeLevel || currentUser?.classGrade || rawProfile.gradeLevel || 'Grade 11',
+    section: currentUser?.section || rawProfile.section || 'A',
+    avatar: currentUser?.avatar || rawProfile.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+    transportRoute: currentUser?.transportRoute || rawProfile.transportRoute || 'None',
+    medicalNotes: currentUser?.medicalNotes || rawProfile.medicalNotes || 'None',
+    gpa: rawProfile.gpa || 3.88,
+    attendanceRate: rawProfile.attendanceRate || 96.2,
+    presentDays: rawProfile.presentDays || 135,
+    absentDays: rawProfile.absentDays || 5,
+    paidFees: rawProfile.paidFees || 48500,
+    pendingFees: rawProfile.pendingFees || 0,
+  };
   const stats = dashboardData?.stats || {
     overallGPA: profile.gpa || 3.88,
     attendancePercentage: profile.attendanceRate || 96.2,

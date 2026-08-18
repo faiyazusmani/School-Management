@@ -35,8 +35,25 @@ export const Login = () => {
     }
 
     if (result.success) {
-      toast.success(`Welcome back, ${result.user.name}! Accessing ${result.user.role?.replace('_', ' ')} portal.`);
-      navigate('/dashboard');
+      const isSuperAdmin = result.user?.role === 'super_admin' || 
+        (result.user?.email && import.meta.env.VITE_SUPER_ADMIN_EMAIL && result.user.email.toLowerCase() === import.meta.env.VITE_SUPER_ADMIN_EMAIL.toLowerCase()) ||
+        result.user?.email?.toLowerCase().includes('admin');
+
+      if (!isSuperAdmin && !result.user.onboardingCompleted) {
+        toast.info('Please select your institutional role and complete your profile form.');
+        navigate('/register-onboarding', {
+          state: {
+            prefilled: {
+              name: result.user.name,
+              email: result.user.email,
+              avatar: result.user.avatar,
+            },
+          },
+        });
+      } else {
+        toast.success(`Welcome back, ${result.user.name}! Accessing ${result.user.role?.replace('_', ' ')} portal.`);
+        navigate('/dashboard');
+      }
     } else {
       toast.error(result.message || 'Login failed');
     }
@@ -71,7 +88,7 @@ export const Login = () => {
             (result.user?.email && import.meta.env.VITE_SUPER_ADMIN_EMAIL && result.user.email.toLowerCase() === import.meta.env.VITE_SUPER_ADMIN_EMAIL.toLowerCase()) ||
             result.user?.email?.toLowerCase().includes('admin');
 
-          if (result.isNewUser && !isSuperAdmin) {
+          if (!isSuperAdmin && !result.user.onboardingCompleted) {
             toast.info('Please select your role card and complete onboarding profile.');
             navigate('/register-onboarding', {
               state: {
