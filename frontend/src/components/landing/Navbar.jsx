@@ -35,9 +35,12 @@ export const Navbar = () => {
 
         const result = await googleAuthLogin(payload);
         if (result.success) {
+          const isStudent = result.user?.role === 'student' || result.user?.email?.toLowerCase().includes('student');
           toast.success(`Welcome back, ${result.user?.name || 'User'}!`);
           if (result.isNewUser) {
             navigate('/register-onboarding');
+          } else if (isStudent) {
+            navigate('/', { replace: true });
           } else {
             navigate('/dashboard');
           }

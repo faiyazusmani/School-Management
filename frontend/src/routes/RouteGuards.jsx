@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Spinner } from '../components/ui/Spinner';
 
 export const ProtectedRoute = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -14,11 +14,21 @@ export const ProtectedRoute = () => {
     );
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Mandatory Onboarding Check: New users (e.g. Google OAuth) MUST complete the onboarding form
+  const isSuperAdmin = user?.role === 'super_admin' || user?.email?.toLowerCase().includes('admin') || user?.email === 'faiyaz25@navgurukul.org';
+  if (user && !isSuperAdmin && !user.onboardingCompleted) {
+    return <Navigate to="/register-onboarding" replace />;
+  }
+
+  return <Outlet />;
 };
 
 export const PublicRoute = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -28,7 +38,15 @@ export const PublicRoute = () => {
     );
   }
 
-  return !isAuthenticated ? <Outlet /> : <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) {
+    const isSuperAdmin = user?.role === 'super_admin' || user?.email?.toLowerCase().includes('admin') || user?.email === 'faiyaz25@navgurukul.org';
+    if (user && !isSuperAdmin && !user.onboardingCompleted) {
+      return <Navigate to="/register-onboarding" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
 };
 
 export const RoleRoute = ({ allowedRoles }) => {

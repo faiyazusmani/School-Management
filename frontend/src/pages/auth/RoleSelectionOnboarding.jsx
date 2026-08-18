@@ -202,8 +202,13 @@ export const RoleSelectionOnboarding = () => {
         window.dispatchEvent(new Event('storage'));
       } catch (e) {}
 
-      toast.success(`Profile onboarding completed! Welcome to ${selectedRole} portal.`);
-      navigate('/dashboard');
+      if (selectedRole === 'student') {
+        toast.success(`Profile onboarding completed! Welcome, ${updatedUser.name}.`);
+        navigate('/', { replace: true });
+      } else {
+        toast.success(`Profile onboarding completed! Welcome to ${selectedRole} portal.`);
+        navigate('/dashboard');
+      }
     } catch (err) {
       toast.error(err.message || 'Server error during onboarding registration');
     } finally {

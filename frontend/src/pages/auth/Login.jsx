@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from '../../components/ui/toast';
 
 export const Login = () => {
-  const [email, setEmail] = useState('admin@edumanage.com');
+  const [email, setEmail] = useState('student@edumanage.com');
   const [password, setPassword] = useState('password123');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -38,6 +38,8 @@ export const Login = () => {
       const isSuperAdmin = result.user?.role === 'super_admin' || 
         (result.user?.email && import.meta.env.VITE_SUPER_ADMIN_EMAIL && result.user.email.toLowerCase() === import.meta.env.VITE_SUPER_ADMIN_EMAIL.toLowerCase()) ||
         result.user?.email?.toLowerCase().includes('admin');
+      
+      const isStudent = result.user?.role === 'student' || result.user?.email?.toLowerCase().includes('student');
 
       if (!isSuperAdmin && !result.user.onboardingCompleted) {
         toast.info('Please select your institutional role and complete your profile form.');
@@ -50,6 +52,9 @@ export const Login = () => {
             },
           },
         });
+      } else if (isStudent) {
+        toast.success(`Welcome, ${result.user.name}! Redirecting to EduManage Landing Home.`);
+        navigate('/', { replace: true });
       } else {
         toast.success(`Welcome back, ${result.user.name}! Accessing ${result.user.role?.replace('_', ' ')} portal.`);
         navigate('/dashboard');
@@ -87,6 +92,7 @@ export const Login = () => {
           const isSuperAdmin = result.user?.role === 'super_admin' || 
             (result.user?.email && import.meta.env.VITE_SUPER_ADMIN_EMAIL && result.user.email.toLowerCase() === import.meta.env.VITE_SUPER_ADMIN_EMAIL.toLowerCase()) ||
             result.user?.email?.toLowerCase().includes('admin');
+          const isStudent = result.user?.role === 'student' || result.user?.email?.toLowerCase().includes('student');
 
           if (!isSuperAdmin && !result.user.onboardingCompleted) {
             toast.info('Please select your role card and complete onboarding profile.');
@@ -99,12 +105,14 @@ export const Login = () => {
                 },
               },
             });
+          } else if (isStudent) {
+            toast.success(`Welcome, ${result.user.name}! Redirecting to EduManage Landing Home.`);
+            navigate('/', { replace: true });
           } else {
             toast.success(`Welcome back, ${result.user.name}!`);
             navigate('/dashboard');
           }
         } else {
-          // Fallback force login if response object was partial
           const fallbackRes = await googleAuthLogin({
             googleId: `g_${Date.now()}`,
             email: 'google.student@edumanage.com',
@@ -113,7 +121,7 @@ export const Login = () => {
           });
           if (fallbackRes.success) {
             toast.success(`Signed in via Google! Welcome, ${fallbackRes.user.name}`);
-            navigate('/dashboard');
+            navigate('/', { replace: true });
           }
         }
       } catch (err) {
@@ -133,7 +141,7 @@ export const Login = () => {
         });
         if (fallbackRes.success) {
           toast.success(`Signed in via Google OAuth! Welcome, ${fallbackRes.user.name}`);
-          navigate('/dashboard');
+          navigate('/', { replace: true });
         }
       } catch (err) {
         toast.error('Google Sign In failed');
@@ -152,7 +160,10 @@ export const Login = () => {
       });
 
       if (res.success) {
-        if (res.isNewUser) {
+        const isSuperAdmin = res.user?.role === 'super_admin' || res.user?.email?.toLowerCase().includes('admin');
+        const isStudent = res.user?.role === 'student' || res.user?.email?.toLowerCase().includes('student');
+
+        if (!isSuperAdmin && !res.user.onboardingCompleted) {
           toast.info('Please select your role card and complete onboarding profile.');
           navigate('/register-onboarding', {
             state: {
@@ -163,6 +174,9 @@ export const Login = () => {
               },
             },
           });
+        } else if (isStudent) {
+          toast.success(`Welcome, ${res.user.name}! Redirecting to EduManage Landing Home.`);
+          navigate('/', { replace: true });
         } else {
           toast.success(`Welcome back, ${res.user.name}!`);
           navigate('/dashboard');
@@ -181,7 +195,11 @@ export const Login = () => {
   const handleQuickPreset = (role) => {
     switchDemoRole(role);
     toast.success(`Logged in as Demo ${role.replace('_', ' ')}`);
-    navigate('/dashboard');
+    if (role === 'student') {
+      navigate('/', { replace: true });
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -233,8 +251,6 @@ export const Login = () => {
               or sign in with email
             </span>
           </div>
-
-
 
           <form onSubmit={handleLogin} className="space-y-4">
             <Input

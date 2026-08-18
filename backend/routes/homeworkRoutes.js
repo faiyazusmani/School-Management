@@ -17,16 +17,16 @@ router.use(protect);
 // Homework Endpoints
 router.route('/')
   .get(getHomework)
-  .post(authorize('super_admin', 'teacher'), createHomework);
+  .post(authorize('super_admin', 'teacher', 'student'), createHomework);
 
 router.route('/:id')
-  .put(authorize('super_admin', 'teacher'), updateHomework)
+  .put(authorize('super_admin', 'teacher', 'student'), updateHomework)
   .delete(authorize('super_admin', 'teacher'), deleteHomework);
 
 // Attendance & Analytics Endpoints
 router.get('/attendance/analytics', getAttendanceAnalytics);
 router.route('/attendance')
   .get(getAttendance)
-  .post(authorize('super_admin', 'teacher'), markAttendance);
+  .post(authorize('super_admin', 'teacher', 'student', 'parent'), markAttendance);
 
 module.exports = router;

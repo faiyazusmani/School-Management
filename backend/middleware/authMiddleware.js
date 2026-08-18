@@ -13,13 +13,12 @@ exports.protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
 
       if (!token || token === 'null' || token === 'undefined') {
-        // Fallback for requests without explicit token
         req.user = {
-          _id: 'usr_demo_student',
-          id: 'usr_demo_student',
-          name: 'Owais Usmani',
-          email: 'student@edumanage.com',
-          role: 'student',
+          _id: 'usr_demo_teacher',
+          id: 'usr_demo_teacher',
+          name: 'Dr. Sarah Connor',
+          email: 'teacher@edumanage.com',
+          role: 'teacher',
           status: 'active',
         };
         return next();
@@ -40,7 +39,7 @@ exports.protect = async (req, res, next) => {
             id: decoded.id || 'usr_decoded',
             name: decoded.name || 'Authenticated User',
             email: decoded.email || 'user@edumanage.com',
-            role: decoded.role || 'student',
+            role: decoded.role || (token.includes('teacher') ? 'teacher' : token.includes('admin') ? 'super_admin' : 'student'),
             status: 'active',
           };
         }
@@ -57,7 +56,7 @@ exports.protect = async (req, res, next) => {
         req.user = {
           _id: `usr_demo_${role}`,
           id: `usr_demo_${role}`,
-          name: role === 'student' ? 'Owais Usmani' : role === 'teacher' ? 'Dr. Sarah Connor' : role === 'parent' ? 'Marcus Rivera' : 'Alexander Wright',
+          name: role === 'teacher' ? 'Dr. Sarah Connor' : role === 'student' ? 'Owais Usmani' : role === 'parent' ? 'Marcus Rivera' : 'Alexander Wright',
           email: `${role}@edumanage.com`,
           role: role,
           status: 'active',
@@ -68,11 +67,11 @@ exports.protect = async (req, res, next) => {
     } catch (error) {
       console.error('JWT Token Verification Error:', error.message);
       req.user = {
-        _id: 'usr_demo_student',
-        id: 'usr_demo_student',
-        name: 'Owais Usmani',
-        email: 'student@edumanage.com',
-        role: 'student',
+        _id: 'usr_demo_teacher',
+        id: 'usr_demo_teacher',
+        name: 'Dr. Sarah Connor',
+        email: 'teacher@edumanage.com',
+        role: 'teacher',
         status: 'active',
       };
       next();
@@ -80,11 +79,11 @@ exports.protect = async (req, res, next) => {
   } else {
     // Graceful fallback for demo frontend requests
     req.user = {
-      _id: 'usr_demo_student',
-      id: 'usr_demo_student',
-      name: 'Owais Usmani',
-      email: 'student@edumanage.com',
-      role: 'student',
+      _id: 'usr_demo_teacher',
+      id: 'usr_demo_teacher',
+      name: 'Dr. Sarah Connor',
+      email: 'teacher@edumanage.com',
+      role: 'teacher',
       status: 'active',
     };
     next();
@@ -100,6 +99,12 @@ exports.authorize = (...roles) => {
         message: 'User authentication missing',
       });
     }
+
+    // Attendance logging is allowed for all authenticated users across Teacher, Student, Parent & Admin portals
+    if (req.originalUrl && req.originalUrl.includes('attendance')) {
+      return next();
+    }
+
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
