@@ -74,7 +74,7 @@ export const Features = () => {
       : featuresList.filter((f) => f.category === filter);
 
   return (
-    <section id="features" className="py-24 bg-slate-950 dark:bg-slate-950 light:bg-white border-t border-slate-900 dark:border-slate-900 light:border-slate-200">
+    <section id="features" className="pt-10 pb-20 lg:pt-12 lg:pb-24 bg-slate-950 dark:bg-slate-950 light:bg-white border-t border-slate-900 dark:border-slate-900 light:border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <Badge variant="purple">PLATFORM CAPABILITIES</Badge>

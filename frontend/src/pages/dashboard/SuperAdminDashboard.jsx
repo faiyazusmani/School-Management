@@ -187,13 +187,13 @@ export const SuperAdminDashboard = () => {
 
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Parent Accounts</span>
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Active Classes</span>
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-white mt-2 sm:mt-3">{stats.totalParents}</div>
-          <div className="text-xs text-emerald-400 mt-1">✓ Active Portal Logins</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-white mt-2 sm:mt-3">{stats.activeClasses}</div>
+          <div className="text-xs text-emerald-400 mt-1">✓ Active Grade Sections</div>
         </Card>
 
         <Card className="p-4 sm:p-5">

@@ -11,12 +11,10 @@ import { DashboardLayout } from '../pages/dashboard/DashboardLayout';
 import { SuperAdminDashboard } from '../pages/dashboard/SuperAdminDashboard';
 import { TeacherDashboard } from '../pages/dashboard/TeacherDashboard';
 import { StudentDashboard } from '../pages/dashboard/StudentDashboard';
-import { ParentDashboard } from '../pages/dashboard/ParentDashboard';
 
 // Module Components
 import { StudentManagement } from '../pages/dashboard/modules/StudentManagement';
 import { TeacherManagement } from '../pages/dashboard/modules/TeacherManagement';
-import { ParentManagement } from '../pages/dashboard/modules/ParentManagement';
 import { ClassSectionManagement } from '../pages/dashboard/modules/ClassSectionManagement';
 import { SubjectManagement } from '../pages/dashboard/modules/SubjectManagement';
 import { NoticeBoardManagement } from '../pages/dashboard/modules/NoticeBoardManagement';
@@ -32,7 +30,6 @@ import { RolePermissionManagement } from '../pages/dashboard/modules/RolePermiss
 import { SalaryManagement } from '../pages/dashboard/modules/SalaryManagement';
 import { StudentProfileDetail } from '../pages/dashboard/StudentProfileDetail';
 import { TeacherProfileDetail } from '../pages/dashboard/TeacherProfileDetail';
-import { ParentProfileDetail } from '../pages/dashboard/ParentProfileDetail';
 import { AttendanceAnalyticsManagement } from '../pages/dashboard/modules/AttendanceAnalyticsManagement';
 
 import { NotFound404 } from '../pages/errors/NotFound404';
@@ -52,8 +49,6 @@ const DashboardRoleSwitcher = () => {
       return <TeacherDashboard />;
     case 'student':
       return <StudentDashboard />;
-    case 'parent':
-      return <ParentDashboard />;
     default:
       return <SuperAdminDashboard />;
   }
@@ -84,8 +79,6 @@ export const AppRoutes = () => {
           <Route path="users" element={<StudentManagement />} />
           <Route path="teachers" element={<TeacherManagement />} />
           <Route path="teachers/:id" element={<TeacherProfileDetail />} />
-          <Route path="parents" element={<ParentManagement />} />
-          <Route path="parents/:id" element={<ParentProfileDetail />} />
           <Route path="salary" element={<SalaryManagement />} />
           <Route path="classes" element={<ClassSectionManagement />} />
           <Route path="subjects" element={<SubjectManagement />} />
@@ -109,8 +102,6 @@ export const AppRoutes = () => {
           <Route path="grades" element={<TeacherDashboard />} />
           <Route path="courses" element={<StudentDashboard />} />
           <Route path="assignments" element={<StudentDashboard />} />
-          <Route path="performance" element={<ParentDashboard />} />
-          <Route path="messages" element={<ParentDashboard />} />
         </Route>
       </Route>
 

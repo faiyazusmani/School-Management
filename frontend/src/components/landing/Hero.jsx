@@ -1,81 +1,39 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ShieldCheck, Sparkles, Zap, Award, CheckCircle2, Play, Users, BarChart3 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Sparkles, CheckCircle2, ShieldCheck, Zap, Award, Bell, Users } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { useAuth } from '../../context/AuthContext';
 
 export const Hero = () => {
-  const [activeTab, setActiveTab] = useState('super_admin');
-  const { switchDemoRole } = useAuth();
-  const navigate = useNavigate();
+  const [pulseCount, setPulseCount] = useState(1450);
 
-  const rolePreviews = {
-    super_admin: {
-      title: 'Super Admin Control Center',
-      stats: [
-        { label: 'Total Students', value: '1,450' },
-        { label: 'Faculty Staff', value: '98' },
-        { label: 'Monthly Revenue', value: '$128,400' },
-        { label: 'System Health', value: '99.98%' },
-      ],
-      description: 'Complete centralized command over multi-branch school operations, finances, faculty roles, and compliance reporting.',
-    },
-    teacher: {
-      title: 'Teacher Academic Dashboard',
-      stats: [
-        { label: 'Assigned Classes', value: '4' },
-        { label: 'Students Taught', value: '142' },
-        { label: 'Pending Grades', value: '18' },
-        { label: 'Avg Class Score', value: '91.2%' },
-      ],
-      description: 'Streamlined grading rubrics, automated digital attendance, lesson plan sharing, and real-time student progress tracking.',
-    },
-    student: {
-      title: 'Student Learning Hub',
-      stats: [
-        { label: 'Cumulative GPA', value: '3.88' },
-        { label: 'Attendance Rate', value: '96.2%' },
-        { label: 'Credits Earned', value: '24' },
-        { label: 'Assignments Due', value: '3' },
-      ],
-      description: 'Interactive class timetable, assignment submissions, digital gradebooks, exam schedules, and direct teacher query portal.',
-    },
-    parent: {
-      title: 'Parent Observer Portal',
-      stats: [
-        { label: 'Enrolled Children', value: '2' },
-        { label: 'Tuition Fee Status', value: 'Clear' },
-        { label: 'Avg Attendance', value: '97.4%' },
-        { label: 'Teacher Notices', value: '2 Unread' },
-      ],
-      description: 'Full transparency into child performance, daily attendance logs, instant fee statements, and direct teacher messaging.',
-    },
-  };
-
-  const handleLaunchRole = (role) => {
-    switchDemoRole(role);
-    navigate('/dashboard');
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPulseCount((prev) => prev + (Math.floor(Math.random() * 3) - 1));
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <section className="relative overflow-hidden pt-16 pb-24 lg:pt-24 lg:pb-32 bg-slate-950 dark:bg-slate-950 light:bg-slate-50">
-      {/* Background Radial Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-3xl pointer-events-none -z-10" />
+    <section className="relative overflow-hidden pt-12 pb-8 lg:pt-16 lg:pb-10 bg-slate-950 text-slate-100">
+      {/* Dynamic Animated Ambient Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[400px] bg-gradient-to-b from-indigo-600/25 via-purple-600/15 to-transparent blur-3xl pointer-events-none -z-10 animate-pulse" />
+      <div className="absolute -top-20 left-1/4 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10 animate-bounce" style={{ animationDuration: '8s' }} />
+      <div className="absolute -top-10 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" style={{ animationDuration: '6s' }} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto space-y-6">
-          {/* Release Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 backdrop-blur-md">
-            <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
-            <span className="text-xs font-semibold text-indigo-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Top Hero Headline Group */}
+        <div className="text-center max-w-3xl mx-auto space-y-5">
+          {/* Animated Release Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-500/40 bg-indigo-500/10 backdrop-blur-md shadow-lg shadow-indigo-500/10 hover:border-indigo-400 transition-all cursor-pointer">
+            <Sparkles className="w-4 h-4 text-indigo-400 animate-spin" style={{ animationDuration: '5s' }} />
+            <span className="text-xs font-bold text-indigo-300 tracking-wide">
               Next-Gen School SaaS v2.5 Released
             </span>
-            <Badge variant="success" className="text-[10px]">PRODUCTION READY</Badge>
+            <Badge variant="purple" className="text-[10px] uppercase animate-pulse">PRODUCTION READY</Badge>
           </div>
 
           {/* Main Title */}
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight text-slate-100 dark:text-white light:text-slate-900">
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight text-white">
             Empower Your School With{' '}
             <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               Intelligent Management
@@ -83,106 +41,122 @@ export const Hero = () => {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg text-slate-400 dark:text-slate-400 light:text-slate-600 leading-relaxed font-normal">
-            EduManage Pro unifies Super Admins, Teachers, Students, and Parents into a seamless, high-performance web platform with automated grading, real-time attendance, and role-based intelligence.
+          <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+            EduManage Pro unifies Super Admins, Teachers, and Students into a seamless, high-performance web OS with automated grading, real-time attendance, and role-based intelligence.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Button
-              size="lg"
-              variant="primary"
-              onClick={() => handleLaunchRole('super_admin')}
-              className="shadow-indigo-600/30 hover:scale-105 transition-transform"
-            >
-              Explore Super Admin Demo <ArrowRight className="w-5 h-5 ml-1" />
-            </Button>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-1">
             <a href="#features">
-              <Button size="lg" variant="outline">
-                View Features
+              <Button size="lg" variant="primary" className="shadow-xl shadow-indigo-600/30 hover:scale-105 transition-all duration-300 font-bold px-8">
+                View Features <ArrowRight className="w-5 h-5 ml-1.5" />
               </Button>
             </a>
           </div>
 
           {/* Trust Highlights */}
-          <div className="pt-4 flex flex-wrap justify-center items-center gap-6 text-xs text-slate-400 font-medium">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <div className="pt-1 flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-xs text-slate-300 font-semibold">
+            <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800 hover:border-emerald-500/50 transition-colors">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>Role-Based Access (RBAC)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800 hover:border-indigo-500/50 transition-colors">
+              <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
               <span>JWT + bcrypt Security</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800 hover:border-purple-500/50 transition-colors">
+              <Zap className="w-4 h-4 text-purple-400 shrink-0" />
               <span>Dark & Light Themes</span>
             </div>
           </div>
         </div>
 
-        {/* Interactive Dashboard SaaS Preview Frame */}
-        <div className="mt-16 relative max-w-5xl mx-auto">
-          {/* Role Tabs */}
-          <div className="flex justify-center mb-4 gap-2 overflow-x-auto p-1 bg-slate-900/90 border border-slate-800 rounded-2xl max-w-xl mx-auto">
-            {Object.keys(rolePreviews).map((r) => (
-              <button
-                key={r}
-                onClick={() => setActiveTab(r)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-wider ${
-                  activeTab === r
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                }`}
-              >
-                {r.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
-
-          {/* Mock Glassmorphism Interface Frame */}
-          <div className="rounded-3xl border border-slate-800/80 bg-slate-900/90 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl glow-purple dark:bg-slate-900/90 light:bg-white light:border-slate-200">
-            {/* Top Bar Mock Controls */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6 light:border-slate-200">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-500/80" />
-                <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                <span className="ml-2 text-xs font-mono text-slate-500">
-                  https://app.edumanagepro.com/dashboard/{activeTab}
+        {/* 🌟 ANIMATED INTERACTIVE FEATURE SHOWCASE GRID (Covers space tightly) */}
+        <div className="pt-2 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Feature Card 1: Attendance Ticker */}
+            <div className="group relative p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/60 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse">
+                  96.8% RATE
                 </span>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
+                  Real-Time Attendance
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">Instant Present / Leave / Late logs with automated calculations.</p>
+              </div>
+              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-gradient-to-r from-emerald-500 to-indigo-500 h-full w-[96.8%] rounded-full animate-pulse" />
               </div>
             </div>
 
-            {/* Dashboard Content Mock */}
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-100 dark:text-white light:text-slate-900">
-                    {rolePreviews[activeTab].title}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {rolePreviews[activeTab].description}
-                  </p>
+            {/* Feature Card 2: Live Notice Board */}
+            <div className="group relative p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/60 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Bell className="w-5 h-5" />
                 </div>
-                <Badge variant="purple">LIVE INTERACTIVE PREVIEW</Badge>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  LIVE BROADCAST
+                </span>
               </div>
+              <div>
+                <h4 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
+                  Instant Notice Board
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">Publish notices to Teachers & Students in under 1 second.</p>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-amber-300 font-semibold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                <Sparkles className="w-3.5 h-3.5 animate-spin" /> Sports Meet Announced
+              </div>
+            </div>
 
-              {/* Stats Grid Preview */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {rolePreviews[activeTab].stats.map((st, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 dark:bg-slate-950/80 light:bg-slate-50 light:border-slate-200"
-                  >
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      {st.label}
-                    </span>
-                    <span className="text-xl font-extrabold text-indigo-400 mt-1 block">
-                      {st.value}
-                    </span>
-                  </div>
-                ))}
+            {/* Feature Card 3: Automated Gradebook */}
+            <div className="group relative p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/60 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Award className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                  GPA 3.88 / 4.0
+                </span>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
+                  Exam & Grade System
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">Automated grade computation & PDF transcript exports.</p>
+              </div>
+              <div className="flex items-center justify-between text-xs text-purple-300 font-bold bg-purple-500/10 p-1.5 rounded-lg border border-purple-500/20">
+                <span>Grade 12 Results</span>
+                <span className="text-emerald-400">Published ✓</span>
+              </div>
+            </div>
+
+            {/* Feature Card 4: Enrolled Students */}
+            <div className="group relative p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/60 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Users className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  ACTIVE USERS
+                </span>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
+                  Enrolled Students
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">Real-time student registry & profile demographics.</p>
+              </div>
+              <div className="flex items-center justify-between text-xs text-indigo-300 font-extrabold bg-indigo-500/10 p-1.5 rounded-lg border border-indigo-500/20">
+                <span>Total Registered</span>
+                <span className="text-white font-mono">{pulseCount}</span>
               </div>
             </div>
           </div>

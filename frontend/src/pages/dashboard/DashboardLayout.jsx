@@ -172,7 +172,6 @@ export const DashboardLayout = () => {
           { name: 'Overview', icon: LayoutDashboard, path: '/dashboard' },
           { name: 'Student Management', icon: Users, path: '/dashboard/students' },
           { name: 'Teacher Management', icon: Users, path: '/dashboard/teachers' },
-          { name: 'Parent Management', icon: Users, path: '/dashboard/parents' },
           { name: 'Classes & Sections', icon: BookOpen, path: '/dashboard/classes' },
           { name: 'Subjects Catalog', icon: BookOpen, path: '/dashboard/subjects' },
           { name: 'Notice Board', icon: Bell, path: '/dashboard/notices' },
@@ -205,14 +204,6 @@ export const DashboardLayout = () => {
           { name: 'Fee Statements', icon: DollarSign, path: '/dashboard/fees' },
           { name: 'My Profile', icon: Settings, path: '/dashboard/profile' },
         ];
-      case 'parent':
-        return [
-          { name: 'Parent Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-          { name: 'Child Performance', icon: Award, path: '/dashboard/exams' },
-          { name: 'Tuition Fees', icon: DollarSign, path: '/dashboard/fees' },
-          { name: 'Teacher Chat', icon: MessageSquare, path: '/dashboard/messages' },
-          { name: 'My Profile', icon: Settings, path: '/dashboard/profile' },
-        ];
       default:
         return [{ name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' }];
     }
@@ -241,13 +232,13 @@ export const DashboardLayout = () => {
         {/* Brand Header */}
         <div>
           <div className="h-16 sm:h-20 px-4 sm:px-6 flex items-center justify-between border-b border-slate-800/80">
-            <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 shrink-0">
+            <Link to="/" title="Go to Website Front Page" className="flex items-center gap-3 min-w-0 group cursor-pointer">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 shrink-0 group-hover:scale-105 transition-transform">
                 <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div className={`min-w-0 ${collapsed ? 'lg:hidden' : 'block'}`}>
-                <div className="font-extrabold text-white text-base tracking-tight truncate">EduManage PRO</div>
-                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate">Academic OS</div>
+                <div className="font-extrabold text-white text-base tracking-tight truncate group-hover:text-indigo-300 transition-colors">EduManage PRO</div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate group-hover:text-indigo-400 transition-colors">Academic OS</div>
               </div>
             </Link>
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Lock, Mail, Phone, ShieldCheck, Save, Camera, Image, Upload, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Phone, ShieldCheck, Save, Camera, Image, Upload } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
@@ -47,12 +47,6 @@ export const ProfileManagement = () => {
     }
   }, [user]);
 
-  const [passwordData, setPasswordData] = useState({
-    current: '',
-    newPass: '',
-    confirmPass: '',
-  });
-
   // Handle Photo File Upload with Canvas compression to avoid localStorage QuotaExceededError
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -90,30 +84,16 @@ export const ProfileManagement = () => {
         setUser(updatedUser);
         safeSetItem('edumanage_user', JSON.stringify(updatedUser));
       }
-      toast.success('Super Admin Profile & Photo saved permanently! 📸');
+      toast.success('Profile & Photo saved permanently! 📸');
     } catch (err) {
       toast.error(err.message || 'Failed to update profile');
     }
   };
 
-  const handlePasswordChange = (e) => {
-    e.preventDefault();
-    if (passwordData.newPass.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-    if (passwordData.newPass !== passwordData.confirmPass) {
-      toast.error('New passwords do not match');
-      return;
-    }
-    toast.success('Security password credentials updated successfully!');
-    setPasswordData({ current: '', newPass: '', confirmPass: '' });
-  };
-
   const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name || 'Faiyaz Usmani')}&background=6366f1&color=fff&size=200`;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-8">
       {/* Hidden File Input for Image Upload */}
       <input
         ref={fileInputRef}
@@ -172,17 +152,17 @@ export const ProfileManagement = () => {
         </div>
       </Card>
 
-      {/* Edit Profile & Security Forms */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <User className="w-4 h-4 text-indigo-400" /> Personal Details
-            </h3>
-            <span className="text-[10px] text-slate-400 font-semibold">Super Admin Profile</span>
-          </div>
+      {/* Edit Personal Details Form Card */}
+      <Card className="p-6 sm:p-8">
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
+          <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+            <User className="w-5 h-5 text-indigo-400" /> Personal Details
+          </h3>
+          <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Profile Information</span>
+        </div>
 
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
+        <form onSubmit={handleUpdateProfile} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Full Name *"
               icon={User}
@@ -198,6 +178,9 @@ export const ProfileManagement = () => {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Phone Number"
               icon={Phone}
@@ -209,82 +192,48 @@ export const ProfileManagement = () => {
               value={formData.schoolName}
               onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
             />
-
-            {/* Custom Photo URL Input */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold uppercase text-slate-400">
-                Profile Photo (Upload file above or paste image URL)
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  icon={Image}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  value={formData.avatar}
-                  onChange={async (e) => {
-                    const newUrl = e.target.value;
-                    const compressed = await compressImage(newUrl, 300, 300, 0.7);
-                    setFormData((prev) => ({ ...prev, avatar: compressed }));
-                    safeSetItem('edumanage_user_avatar', compressed);
-                    if (formData.email) {
-                      safeSetItem(`edumanage_avatar_${formData.email}`, compressed);
-                    }
-                  }}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="shrink-0 flex items-center gap-1"
-                >
-                  <Upload className="w-3.5 h-3.5" /> Upload
-                </Button>
-              </div>
-            </div>
-
-            <Button type="submit" variant="primary" size="sm" className="w-full mt-2">
-              <Save className="w-4 h-4 mr-1.5" /> Save Profile Details
-            </Button>
-          </form>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Lock className="w-4 h-4 text-indigo-400" /> Security Credentials
-            </h3>
-            <span className="text-[10px] text-slate-400 font-semibold">Password Control</span>
           </div>
 
-          <form onSubmit={handlePasswordChange} className="space-y-4">
-            <Input
-              label="Current Password"
-              type="password"
-              icon={Lock}
-              value={passwordData.current}
-              onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
-            />
-            <Input
-              label="New Password"
-              type="password"
-              icon={Lock}
-              value={passwordData.newPass}
-              onChange={(e) => setPasswordData({ ...passwordData, newPass: e.target.value })}
-            />
-            <Input
-              label="Confirm New Password"
-              type="password"
-              icon={Lock}
-              value={passwordData.confirmPass}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPass: e.target.value })}
-            />
-            <Button type="submit" variant="outline" size="sm" className="w-full mt-2">
-              <CheckCircle2 className="w-4 h-4 mr-1.5" /> Update Security Password
+          {/* Custom Photo URL Input */}
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Profile Photo (Upload file above or paste image URL)
+            </label>
+            <div className="flex gap-2">
+              <Input
+                icon={Image}
+                placeholder="https://images.unsplash.com/photo-..."
+                value={formData.avatar}
+                onChange={async (e) => {
+                  const newUrl = e.target.value;
+                  const compressed = await compressImage(newUrl, 300, 300, 0.7);
+                  setFormData((prev) => ({ ...prev, avatar: compressed }));
+                  safeSetItem('edumanage_user_avatar', compressed);
+                  if (formData.email) {
+                    safeSetItem(`edumanage_avatar_${formData.email}`, compressed);
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 flex items-center gap-1"
+              >
+                <Upload className="w-3.5 h-3.5" /> Upload File
+              </Button>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-800">
+            <Button type="submit" variant="primary" size="md" className="w-full sm:w-auto px-8">
+              <Save className="w-4 h-4 mr-2" /> Save Profile Details
             </Button>
-          </form>
-        </Card>
-      </div>
+          </div>
+        </form>
+      </Card>
     </div>
   );
 };

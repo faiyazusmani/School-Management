@@ -246,17 +246,17 @@ export const RoleSelectionOnboarding = () => {
                 <p className="text-sm text-slate-400">Choose your institutional role to start onboarding profile</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
                 {/* Student Card */}
                 <div
                   onClick={() => handleRoleSelect('student')}
-                  className="group relative cursor-pointer p-6 rounded-2xl border border-slate-800 bg-slate-950/60 hover:bg-indigo-600/10 hover:border-indigo-500 transition-all text-center flex flex-col justify-between space-y-4 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                  className="group relative cursor-pointer p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-950/60 hover:bg-indigo-600/10 hover:border-indigo-500 transition-all text-center flex flex-col justify-between space-y-4 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                    <GraduationCap className="w-7 h-7" />
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
+                    <GraduationCap className="w-8 h-8" />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-white group-hover:text-indigo-300">🎓 Student</h3>
+                  <div className="space-y-1.5">
+                    <h3 className="text-xl font-black text-white group-hover:text-indigo-300">🎓 Student</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       Access homework, check class schedules, and view academic reports.
                     </p>
@@ -269,38 +269,19 @@ export const RoleSelectionOnboarding = () => {
                 {/* Teacher Card */}
                 <div
                   onClick={() => handleRoleSelect('teacher')}
-                  className="group relative cursor-pointer p-6 rounded-2xl border border-slate-800 bg-slate-950/60 hover:bg-indigo-600/10 hover:border-indigo-500 transition-all text-center flex flex-col justify-between space-y-4 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                  className="group relative cursor-pointer p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-950/60 hover:bg-indigo-600/10 hover:border-indigo-500 transition-all text-center flex flex-col justify-between space-y-4 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                    <Briefcase className="w-7 h-7" />
+                  <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
+                    <Briefcase className="w-8 h-8" />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-white group-hover:text-indigo-300">👩‍🏫 Teacher</h3>
+                  <div className="space-y-1.5">
+                    <h3 className="text-xl font-black text-white group-hover:text-indigo-300">👩‍🏫 Teacher</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       Grade exam sheets, log attendance rate, and coordinate courses.
                     </p>
                   </div>
                   <div className="pt-2 text-xs font-bold text-indigo-400 flex items-center justify-center gap-1 group-hover:translate-x-1 transition-transform">
                     Select Teacher <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-
-                {/* Parent Card */}
-                <div
-                  onClick={() => handleRoleSelect('parent')}
-                  className="group relative cursor-pointer p-6 rounded-2xl border border-slate-800 bg-slate-950/60 hover:bg-indigo-600/10 hover:border-indigo-500 transition-all text-center flex flex-col justify-between space-y-4 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                    <Users className="w-7 h-7" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-white group-hover:text-indigo-300">👨‍👩‍👧 Parent</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      Link accounts with children, trace fee vouchers, and monitor attendance.
-                    </p>
-                  </div>
-                  <div className="pt-2 text-xs font-bold text-indigo-400 flex items-center justify-center gap-1 group-hover:translate-x-1 transition-transform">
-                    Select Parent <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
               </div>

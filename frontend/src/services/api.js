@@ -127,13 +127,7 @@ export const teacherAPI = {
   delete: (id) => apiClient.delete(`/teachers/${id}`),
 };
 
-export const parentAPI = {
-  getAll: (params) => apiClient.get('/parents', { params }),
-  getById: (id) => apiClient.get(`/parents/${id}`),
-  create: (data) => apiClient.post('/parents', data),
-  update: (id, data) => apiClient.put(`/parents/${id}`, data),
-  delete: (id) => apiClient.delete(`/parents/${id}`),
-};
+
 
 export const salaryAPI = {
   getAll: (params) => apiClient.get('/salary', { params }),
